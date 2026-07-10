@@ -21,3 +21,8 @@ test_*.bat
 _backup_*/
 apply_*.py
 *.bak
+
+# Local installers and backups
+_backup_*/
+apply_*.py
+*.bak
