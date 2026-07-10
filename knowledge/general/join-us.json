@@ -1,7 +1,7 @@
 {
   "id": "join-us",
   "source_type": "tilda",
-  "type": "tour",
+  "type": "general",
   "title": "Свет Лотоса ☀️ Контактная информация",
   "url": "https://svet-lotosa.tilda.ws/join-us",
   "enabled": true,
@@ -15,6 +15,7 @@
   ],
   "metadata": {
     "chars": 1641,
-    "chunks_count": 2
+    "chunks_count": 2,
+    "classification_source": "automatic"
   }
 }

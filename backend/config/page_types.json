@@ -1,8 +1,50 @@
 {
-  "https://svet-lotosa.tilda.ws/buddolog-consult": {
-    "type": "consultation",
-    "title": "Консультация буддолога-психолога",
+  "https://svet-lotosa.tilda.ws": {
+    "type": "general",
+    "title": "Главная страница",
+    "enabled": true,
+    "priority": 10
+  },
+  "https://svet-lotosa.tilda.ws/putretrit": {
+    "type": "tour_catalog",
+    "title": "Каталог путешествий",
+    "enabled": true,
+    "priority": 80
+  },
+  "https://svet-lotosa.tilda.ws/india-tur-dolina-kullu-2-11-maya": {
+    "type": "tour",
+    "title": "По стопам Рериха — Долина Куллу",
     "enabled": true,
     "priority": 100
+  },
+  "https://svet-lotosa.tilda.ws/buddolog-consult": {
+    "type": "psychologist",
+    "title": "Консультация психолога-буддолога",
+    "enabled": true,
+    "priority": 100
+  },
+  "https://svet-lotosa.tilda.ws/svet-lotosa-shop": {
+    "type": "shop_catalog",
+    "title": "Магазин Свет Лотоса",
+    "enabled": true,
+    "priority": 80
+  },
+  "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/260561911092-statuya-ushnishavidzhai": {
+    "type": "product",
+    "title": "Статуя Ушнишавиджаи",
+    "enabled": true,
+    "priority": 100
+  },
+  "https://svet-lotosa.tilda.ws/reviews": {
+    "type": "reviews",
+    "title": "Отзывы",
+    "enabled": true,
+    "priority": 50
+  },
+  "https://svet-lotosa.tilda.ws/privacy": {
+    "type": "legal",
+    "title": "Политика обработки персональных данных",
+    "enabled": true,
+    "priority": 0
   }
 }

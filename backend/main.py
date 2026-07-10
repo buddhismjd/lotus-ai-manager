@@ -1,44 +1,115 @@
+from __future__ import annotations
+
+from html import escape
+
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, JSONResponse
-from backend.config import SITE_URL, EMAIL_TO, AI_PROVIDER, OLLAMA_MODEL
-from backend.services.knowledge_service import rebuild_knowledge, load_knowledge, search_knowledge
+
+from backend.config import AI_PROVIDER, EMAIL_TO, OLLAMA_MODEL, SITE_URL
 from backend.services.ai_service import chat
+from backend.services.dashboard_service import get_dashboard_data
+from backend.services.knowledge_service import load_knowledge, rebuild_knowledge, search_knowledge
 from backend.services.llm_service import ollama_available
 
-app = FastAPI(title='Lotus AI Manager', version='0.5.0')
+app = FastAPI(title="Lotus AI Manager", version="0.6.0")
 
-@app.get('/')
-def home():
-    return {'project':'Lotus AI Manager','status':'running','version':'0.5.0','site':SITE_URL,'email_to':EMAIL_TO,'ai_provider':AI_PROVIDER,'admin':'http://127.0.0.1:8000/admin','chat':'http://127.0.0.1:8000/chat-ui'}
+STYLE = """
+<style>
+body{font-family:Arial,sans-serif;background:#f7f3ff;color:#2d2440;margin:0;padding:30px 18px}.container{max-width:1080px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}.card{background:#fff;border:1px solid #e7def8;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 7px 25px rgba(70,42,120,.06)}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}.stat{background:#faf8ff;border:1px solid #e7def8;border-radius:14px;padding:16px}.num{font-size:28px;font-weight:bold;color:#6847d9}.button{display:inline-block;padding:11px 16px;border-radius:11px;background:#6847d9;color:#fff;text-decoration:none;border:0;cursor:pointer}.secondary{background:#ede7ff;color:#4b358d}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #eee8f8;vertical-align:top}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee8ff;color:#503b9d;font-size:12px;font-weight:bold}input{width:72%;padding:12px;border:1px solid #d8cdec;border-radius:10px;font-size:15px}.muted{color:#786f88}.chat{min-height:360px;border:1px solid #eee8f8;border-radius:16px;padding:16px;overflow:auto}.msg{white-space:pre-wrap;padding:12px 14px;border-radius:14px;margin:10px 0;line-height:1.45}.user{background:#eee8ff;margin-left:80px}.bot{background:#f5f3f7;margin-right:80px}.row{display:flex;gap:10px;margin-top:14px}.row input{flex:1;width:auto}
+</style>
+"""
 
-@app.get('/admin', response_class=HTMLResponse)
-def admin_page():
-    k = load_knowledge()
-    ollama_status = 'доступна' if ollama_available() else 'не подключена'
-    return f'''<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Lotus AI Manager</title><style>body{{font-family:Arial,sans-serif;max-width:980px;margin:40px auto;line-height:1.5;background:#faf8ff}}.card{{background:white;border:1px solid #e5defa;border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 5px 20px rgba(80,50,130,.06)}}a.button,button{{display:inline-block;padding:12px 18px;border-radius:12px;background:#6d4aff;color:white;text-decoration:none;border:0;cursor:pointer}}input{{padding:12px;width:70%;border:1px solid #ccc;border-radius:10px}}code{{background:#f1ecff;padding:2px 6px;border-radius:6px}}</style></head><body><h1>Lotus AI Manager v0.5</h1><div class="card"><h2>База знаний</h2><p><b>Сайт:</b> {SITE_URL}</p><p><b>Email заявок:</b> {EMAIL_TO}</p><p><b>Страниц:</b> {k.get('pages_count',0)}</p><p><b>Фрагментов:</b> {k.get('chunks_count',0)}</p><p><b>Последнее обновление:</b> {k.get('updated_at') or 'ещё не обновлялась'}</p><p><a class="button" href="/admin/rebuild">Обновить сайт</a></p></div><div class="card"><h2>AI</h2><p><b>Режим:</b> <code>{AI_PROVIDER}</code></p><p><b>Ollama:</b> {ollama_status}</p><p><b>Модель:</b> <code>{OLLAMA_MODEL}</code></p><p>Если Ollama не подключена, система работает в безопасном локальном режиме.</p></div><div class="card"><h2>Тест AI-менеджера</h2><p><a class="button" href="/chat-ui">Открыть чат</a></p></div><div class="card"><h2>Тест поиска</h2><form action="/admin/search" method="get"><input name="q" placeholder="Например: Кайлас, консультации, ретрит"><button type="submit">Искать</button></form></div></body></html>'''
 
-@app.get('/admin/rebuild', response_class=HTMLResponse)
-def admin_rebuild():
-    k = rebuild_knowledge()
-    return f'''<html><body style="font-family:Arial;max-width:800px;margin:40px auto"><h1>База знаний обновлена</h1><p>Страниц: <b>{k.get('pages_count',0)}</b></p><p>Фрагментов: <b>{k.get('chunks_count',0)}</b></p><p>Ошибок: <b>{k.get('errors_count',0)}</b></p><p><a href="/admin">Вернуться в админку</a></p></body></html>'''
+def render(title: str, body: str) -> str:
+    return f"""<!doctype html><html lang='ru'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>{escape(title)}</title>{STYLE}</head><body><div class='container'>{body}</div></body></html>"""
 
-@app.get('/admin/search', response_class=HTMLResponse)
-def admin_search(q: str = Query(...)):
+
+@app.get("/")
+def home() -> dict:
+    return {
+        "project": "Lotus AI Manager",
+        "status": "running",
+        "version": "0.6.0",
+        "site": SITE_URL,
+        "email_to": EMAIL_TO,
+        "ai_provider": AI_PROVIDER,
+        "admin": "http://127.0.0.1:8000/admin",
+        "dev": "http://127.0.0.1:8000/dev",
+        "chat": "http://127.0.0.1:8000/chat-ui",
+    }
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page() -> str:
+    knowledge = load_knowledge()
+    ollama_status = "доступна" if ollama_available() else "не подключена"
+    body = f"""
+    <div class='top'><div><h1>Lotus AI Manager v0.6</h1><div class='muted'>Административная панель</div></div><div><a class='button secondary' href='/dev'>Состояние системы</a> <a class='button' href='/chat-ui'>Открыть чат</a></div></div>
+    <div class='card'><h2>База знаний сайта</h2><p><b>Сайт:</b> {escape(SITE_URL)}</p><p><b>Страниц:</b> {knowledge.get('pages_count',0)}</p><p><b>Фрагментов:</b> {knowledge.get('chunks_count',0)}</p><p><b>Обновлено:</b> {escape(str(knowledge.get('updated_at') or 'ещё не обновлялась'))}</p><a class='button' href='/admin/rebuild'>Обновить сайт</a></div>
+    <div class='card'><h2>AI</h2><p><b>Режим:</b> {escape(AI_PROVIDER)}</p><p><b>Ollama:</b> {ollama_status}</p><p><b>Модель:</b> {escape(OLLAMA_MODEL)}</p></div>
+    <div class='card'><h2>Проверить поиск</h2><form action='/admin/search' method='get'><input name='q' required placeholder='Например: Кайлас, Лапчи, консультация'> <button class='button'>Искать</button></form></div>
+    """
+    return render("Lotus AI Manager — админка", body)
+
+
+@app.get("/dev", response_class=HTMLResponse)
+def developer_dashboard() -> str:
+    data = get_dashboard_data()
+    stats = data["stats"]
+    rows = ""
+    for doc in data["documents"]:
+        rows += f"<tr><td><span class='badge'>{escape(doc['page_type'])}</span></td><td>{escape(doc['title'])}</td><td><a href='{escape(doc['url'])}' target='_blank'>Открыть</a></td><td>{'Да' if doc['enabled'] else 'Нет'}</td><td>{doc['priority']}</td></tr>"
+    if not rows:
+        rows = "<tr><td colspan='5'>Документов пока нет.</td></tr>"
+    body = f"""
+    <div class='top'><div><h1>Состояние Lotus AI Manager</h1><div class='muted'>SQLite и классификация документов</div></div><div><a class='button secondary' href='/admin'>Админка</a> <a class='button' href='/chat-ui'>Чат</a></div></div>
+    <div class='card'><div class='stats'>
+      <div class='stat'><div class='num'>{stats['documents']}</div><div>Документов</div></div>
+      <div class='stat'><div class='num'>{stats['chunks']}</div><div>Фрагментов</div></div>
+      <div class='stat'><div class='num'>{stats['tours']}</div><div>Туров</div></div>
+      <div class='stat'><div class='num'>{stats['consultations']}</div><div>Консультаций</div></div>
+      <div class='stat'><div class='num'>{stats['shop']}</div><div>Товаров</div></div>
+      <div class='stat'><div class='num'>{stats['general']}</div><div>Общих страниц</div></div>
+    </div></div>
+    <div class='card'><h2>Документы в SQLite</h2><table><thead><tr><th>Тип</th><th>Название</th><th>Ссылка</th><th>Активен</th><th>Приоритет</th></tr></thead><tbody>{rows}</tbody></table></div>
+    """
+    return render("Lotus AI Manager — состояние", body)
+
+
+@app.get("/admin/rebuild", response_class=HTMLResponse)
+def admin_rebuild() -> str:
+    knowledge = rebuild_knowledge()
+    body = f"<div class='card'><h1>Сайт обновлён</h1><p><b>Страниц:</b> {knowledge.get('pages_count',0)}</p><p><b>Фрагментов:</b> {knowledge.get('chunks_count',0)}</p><p><b>Ошибок:</b> {knowledge.get('errors_count',0)}</p><p>После этого выполните <code>python -m backend.rag.knowledge_builder</code></p><a class='button' href='/admin'>Вернуться</a></div>"
+    return render("База знаний обновлена", body)
+
+
+@app.get("/admin/search", response_class=HTMLResponse)
+def admin_search(q: str = Query(...)) -> str:
     results = search_knowledge(q)
-    items = ''
+    items = ""
     for item in results:
-        items += f'''<div style="background:white;border:1px solid #ddd;border-radius:12px;padding:14px;margin:12px 0"><h3>{item['title']}</h3><p><b>Score:</b> {item['score']}</p><p><a href="{item['url']}" target="_blank">{item['url']}</a></p><p>{item['snippet']}</p></div>'''
+        items += f"<div class='card'><h3>{escape(str(item.get('title') or 'Без названия'))}</h3><p><b>Тип:</b> {escape(str(item.get('page_type') or 'general'))}</p><p><b>Score:</b> {item.get('score',0)}</p><p><a href='{escape(str(item.get('url') or '#'))}' target='_blank'>Открыть источник</a></p><p>{escape(str(item.get('snippet') or ''))}</p></div>"
     if not items:
-        items = '<p>Ничего не найдено.</p>'
-    return f'''<html><body style="font-family:Arial;max-width:900px;margin:40px auto"><h1>Результаты поиска: {q}</h1>{items}<p><a href="/admin">Назад</a></p></body></html>'''
+        items = "<div class='card'>Ничего не найдено.</div>"
+    return render("Результаты поиска", f"<div class='top'><h1>Результаты поиска: {escape(q)}</h1><a class='button secondary' href='/admin'>Назад</a></div>{items}")
 
-@app.post('/api/chat')
-async def api_chat(payload: dict):
-    message = (payload.get('message') or '').strip()
+
+@app.post("/api/chat")
+async def api_chat(payload: dict) -> JSONResponse:
+    message = (payload.get("message") or "").strip()
     if not message:
-        return JSONResponse({'answer':'Напишите вопрос.','status':'empty'})
+        return JSONResponse({"answer": "Напишите вопрос.", "status": "empty"})
     return JSONResponse(chat(message))
 
-@app.get('/chat-ui', response_class=HTMLResponse)
-def chat_ui():
-    return '''<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>AI-менеджер Свет Лотоса</title><style>body{font-family:Arial,sans-serif;background:#f7f2ff;margin:0;padding:0}.wrap{max-width:780px;margin:40px auto;background:white;border-radius:22px;padding:24px;box-shadow:0 10px 35px rgba(60,30,120,.12)}h1{margin-top:0}#messages{min-height:390px;border:1px solid #eee;border-radius:16px;padding:16px;background:#fff;overflow:auto}.msg{padding:12px 14px;border-radius:14px;margin:10px 0;white-space:pre-wrap;line-height:1.45}.user{background:#ede7ff;margin-left:80px}.bot{background:#f5f5f5;margin-right:80px}.row{display:flex;gap:10px;margin-top:14px}input{flex:1;padding:14px;border:1px solid #ccc;border-radius:12px;font-size:16px}button{padding:14px 18px;border:0;border-radius:12px;background:#6d4aff;color:white;font-size:16px;cursor:pointer}a{color:#6d4aff}.hint{color:#666;font-size:14px}</style></head><body><div class="wrap"><h1>AI-менеджер «Свет Лотоса»</h1><p><a href="/admin">← Админка</a></p><p class="hint">Попробуйте: «Есть консультации?», «Расскажите про Кайлас», «Хочу записаться».</p><div id="messages"><div class="msg bot">Здравствуйте! Я AI-менеджер студии «Свет Лотоса». Задайте вопрос по услугам, турам или практикам.</div></div><div class="row"><input id="message" placeholder="Ваш вопрос..." onkeydown="if(event.key==='Enter') sendMessage()"><button onclick="sendMessage()">Отправить</button></div></div><script>async function sendMessage(){const input=document.getElementById('message');const text=input.value.trim();if(!text)return;addMessage(text,'user');input.value='';addMessage('Думаю...','bot');const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});const data=await response.json();const messages=document.getElementById('messages');messages.lastChild.textContent=data.answer;messages.scrollTop=messages.scrollHeight}function addMessage(text,cls){const box=document.getElementById('messages');const div=document.createElement('div');div.className='msg '+cls;div.textContent=text;box.appendChild(div);box.scrollTop=box.scrollHeight}</script></body></html>'''
+
+@app.get("/chat-ui", response_class=HTMLResponse)
+def chat_ui() -> str:
+    body = """
+    <div class='top'><div><h1>AI-менеджер «Свет Лотоса»</h1><div class='muted'>Локальный тестовый чат</div></div><a class='button secondary' href='/admin'>Админка</a></div>
+    <div class='card'><div id='messages' class='chat'><div class='msg bot'>Здравствуйте! Я AI-менеджер студии «Свет Лотоса». Спросите меня о турах или консультациях.</div></div><div class='row'><input id='message' placeholder='Например: Есть тур на Кайлас?' onkeydown="if(event.key==='Enter')sendMessage()"><button class='button' onclick='sendMessage()'>Отправить</button></div></div>
+    <script>
+    async function sendMessage(){const input=document.getElementById('message');const text=input.value.trim();if(!text)return;addMessage(text,'user');input.value='';addMessage('Думаю...','bot');try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});const d=await r.json();const m=document.getElementById('messages');m.lastChild.textContent=d.answer;m.scrollTop=m.scrollHeight}catch(e){document.getElementById('messages').lastChild.textContent='Не удалось получить ответ. Проверьте сервер.'}}
+    function addMessage(text,cls){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
+    </script>
+    """
+    return render("AI-менеджер Свет Лотоса", body)

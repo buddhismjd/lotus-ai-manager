@@ -8,6 +8,7 @@ from typing import Iterator
 
 from backend.config import DATA_DIR, DATABASE_FILE
 
+
 SCHEMA = """
 PRAGMA foreign_keys = ON;
 
@@ -32,7 +33,9 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id)
+        REFERENCES documents(id)
+        ON DELETE CASCADE,
     UNIQUE(document_id, chunk_index)
 );
 
@@ -50,7 +53,9 @@ CREATE TABLE IF NOT EXISTS messages (
     role TEXT NOT NULL,
     content TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    FOREIGN KEY (dialog_id) REFERENCES dialogs(id) ON DELETE CASCADE
+    FOREIGN KEY (dialog_id)
+        REFERENCES dialogs(id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS leads (
@@ -64,7 +69,9 @@ CREATE TABLE IF NOT EXISTS leads (
     comment TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     created_at TEXT NOT NULL,
-    FOREIGN KEY (dialog_id) REFERENCES dialogs(id) ON DELETE SET NULL
+    FOREIGN KEY (dialog_id)
+        REFERENCES dialogs(id)
+        ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -73,19 +80,31 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_documents_page_type ON documents(page_type);
-CREATE INDEX IF NOT EXISTS idx_documents_enabled ON documents(enabled);
-CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON document_chunks(document_id);
-CREATE INDEX IF NOT EXISTS idx_messages_dialog_id ON messages(dialog_id);
-CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+CREATE INDEX IF NOT EXISTS idx_documents_page_type
+ON documents(page_type);
+
+CREATE INDEX IF NOT EXISTS idx_documents_enabled
+ON documents(enabled);
+
+CREATE INDEX IF NOT EXISTS idx_chunks_document_id
+ON document_chunks(document_id);
+
+CREATE INDEX IF NOT EXISTS idx_messages_dialog_id
+ON messages(dialog_id);
+
+CREATE INDEX IF NOT EXISTS idx_leads_status
+ON leads(status);
 """
+
 
 @contextmanager
 def get_connection() -> Iterator[sqlite3.Connection]:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
     connection = sqlite3.connect(DATABASE_FILE)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+
     try:
         yield connection
         connection.commit()
@@ -95,30 +114,81 @@ def get_connection() -> Iterator[sqlite3.Connection]:
     finally:
         connection.close()
 
+
 def initialize_database() -> Path:
     with get_connection() as connection:
         connection.executescript(SCHEMA)
+
     return DATABASE_FILE
+
+
+def clear_knowledge_documents() -> None:
+    """
+    Clears only generated knowledge documents and chunks.
+
+    Dialogs, messages, leads and settings are preserved.
+    """
+    with get_connection() as connection:
+        connection.execute("DELETE FROM document_chunks")
+        connection.execute("DELETE FROM documents")
+
 
 def get_table_names() -> list[str]:
     with get_connection() as connection:
-        rows = connection.execute("""
-            SELECT name FROM sqlite_master
-            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+        rows = connection.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name NOT LIKE 'sqlite_%'
             ORDER BY name
-        """).fetchall()
+            """
+        ).fetchall()
+
     return [row["name"] for row in rows]
 
+
 def save_document(document: dict) -> None:
+    """
+    Creates or updates one document and replaces its chunks.
+
+    A URL is unique. If an older document has the same URL but another ID,
+    the older record is removed before saving the current document.
+    """
     now = datetime.now().isoformat(timespec="seconds")
     document_id = document["id"]
+    document_url = document.get("url", "")
     chunks = document.get("chunks", [])
+
     with get_connection() as connection:
-        connection.execute("""
+        existing = connection.execute(
+            "SELECT id FROM documents WHERE url = ?",
+            (document_url,),
+        ).fetchone()
+
+        if existing and existing["id"] != document_id:
+            connection.execute(
+                "DELETE FROM documents WHERE id = ?",
+                (existing["id"],),
+            )
+
+        connection.execute(
+            """
             INSERT INTO documents (
-                id, source_type, page_type, title, url, summary, content,
-                enabled, priority, content_hash, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                id,
+                source_type,
+                page_type,
+                title,
+                url,
+                summary,
+                content,
+                enabled,
+                priority,
+                content_hash,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 source_type = excluded.source_type,
                 page_type = excluded.page_type,
@@ -130,62 +200,127 @@ def save_document(document: dict) -> None:
                 priority = excluded.priority,
                 content_hash = excluded.content_hash,
                 updated_at = excluded.updated_at
-        """, (
-            document_id,
-            document.get("source_type", "tilda"),
-            document.get("type", "general"),
-            document.get("title", ""),
-            document.get("url", ""),
-            document.get("summary", ""),
-            document.get("content", ""),
-            1 if document.get("enabled", True) else 0,
-            int(document.get("priority", 0)),
-            document.get("content_hash"),
-            now,
-            now,
-        ))
-        connection.execute("DELETE FROM document_chunks WHERE document_id = ?", (document_id,))
+            """,
+            (
+                document_id,
+                document.get("source_type", "tilda"),
+                document.get("type", "general"),
+                document.get("title", ""),
+                document_url,
+                document.get("summary", ""),
+                document.get("content", ""),
+                1 if document.get("enabled", True) else 0,
+                int(document.get("priority", 0)),
+                document.get("content_hash"),
+                now,
+                now,
+            ),
+        )
+
+        connection.execute(
+            "DELETE FROM document_chunks WHERE document_id = ?",
+            (document_id,),
+        )
+
         for chunk_index, chunk_content in enumerate(chunks):
             chunk_content = chunk_content.strip()
+
             if not chunk_content:
                 continue
-            connection.execute("""
-                INSERT INTO document_chunks (document_id, chunk_index, content, created_at)
+
+            connection.execute(
+                """
+                INSERT INTO document_chunks (
+                    document_id,
+                    chunk_index,
+                    content,
+                    created_at
+                )
                 VALUES (?, ?, ?, ?)
-            """, (document_id, chunk_index, chunk_content, now))
+                """,
+                (
+                    document_id,
+                    chunk_index,
+                    chunk_content,
+                    now,
+                ),
+            )
+
 
 def get_database_stats() -> dict[str, int]:
     with get_connection() as connection:
-        documents_count = connection.execute("SELECT COUNT(*) AS count FROM documents").fetchone()["count"]
-        chunks_count = connection.execute("SELECT COUNT(*) AS count FROM document_chunks").fetchone()["count"]
-        tours_count = connection.execute("SELECT COUNT(*) AS count FROM documents WHERE page_type = 'tour'").fetchone()["count"]
-        consultations_count = connection.execute("SELECT COUNT(*) AS count FROM documents WHERE page_type = 'consultation'").fetchone()["count"]
+        documents_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM documents"
+        ).fetchone()["count"]
+
+        chunks_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM document_chunks"
+        ).fetchone()["count"]
+
+        tours_count = connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM documents
+            WHERE page_type = 'tour'
+            """
+        ).fetchone()["count"]
+
+        psychologist_count = connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM documents
+            WHERE page_type = 'psychologist'
+            """
+        ).fetchone()["count"]
+
+        products_count = connection.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM documents
+            WHERE page_type = 'product'
+            """
+        ).fetchone()["count"]
+
     return {
         "documents": documents_count,
         "chunks": chunks_count,
         "tours": tours_count,
-        "consultations": consultations_count,
+        "psychologist": psychologist_count,
+        "products": products_count,
     }
+
 
 def set_setting(key: str, value: str) -> None:
     now = datetime.now().isoformat(timespec="seconds")
+
     with get_connection() as connection:
-        connection.execute("""
+        connection.execute(
+            """
             INSERT INTO settings (key, value, updated_at)
             VALUES (?, ?, ?)
             ON CONFLICT(key) DO UPDATE SET
                 value = excluded.value,
                 updated_at = excluded.updated_at
-        """, (key, value, now))
+            """,
+            (key, value, now),
+        )
+
 
 def get_setting(key: str) -> str | None:
     with get_connection() as connection:
-        row = connection.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+        row = connection.execute(
+            "SELECT value FROM settings WHERE key = ?",
+            (key,),
+        ).fetchone()
+
     return row["value"] if row else None
+
 
 if __name__ == "__main__":
     database_path = initialize_database()
+
     print(f"Database initialized: {database_path}")
     print("Tables:")
+
     for table_name in get_table_names():
         print(f"  - {table_name}")
