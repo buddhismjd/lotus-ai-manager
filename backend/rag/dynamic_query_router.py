@@ -133,6 +133,7 @@ def tokens(text: str) -> list[str]:
 
 def stem(word: str) -> str:
     word = normalize(word)
+
     endings = (
         "иями",
         "ями",
@@ -171,15 +172,46 @@ def stem(word: str) -> str:
         "е",
         "о",
     )
+
     for ending in endings:
         if word.endswith(ending) and len(word) - len(ending) >= 4:
             return word[: -len(ending)]
+
     return word
 
 
 def contains_any(text: str, words: set[str]) -> bool:
     normalized = normalize(text)
     return any(normalize(word) in normalized for word in words)
+
+
+def _contains_token_phrase(
+    phrase_tokens: list[str],
+    target_tokens: list[str],
+) -> bool:
+    if not phrase_tokens or len(phrase_tokens) > len(target_tokens):
+        return False
+
+    width = len(phrase_tokens)
+    return any(
+        target_tokens[index : index + width] == phrase_tokens
+        for index in range(len(target_tokens) - width + 1)
+    )
+
+
+def _fuzzy_ratio(left: str, right: str) -> float:
+    left_stem = stem(left)
+    right_stem = stem(right)
+
+    if not left_stem or not right_stem:
+        return 0.0
+
+    if left_stem != right_stem and (
+        left_stem in right_stem or right_stem in left_stem
+    ):
+        return 0.0
+
+    return SequenceMatcher(None, left_stem, right_stem).ratio()
 
 
 def _index_item(
@@ -192,8 +224,10 @@ def _index_item(
         for part in searchable_parts
         if part and part.strip()
     )
+
     title_tokens = tokens(title)
     search_tokens = tokens(searchable)
+
     return {
         "title": title,
         "url": url,
@@ -266,28 +300,28 @@ def best_catalog_match(
 
     for item in catalog_index().get(page_type, []):
         score = 0.0
+
         title_stems = item["title_stems"]
         search_stems = item["search_stems"]
+
         exact_title_hits = len(query_stems & title_stems)
         search_hits = len(query_stems & search_stems)
+
         score += exact_title_hits * 35
         score += max(0, search_hits - exact_title_hits) * 8
 
-        query_phrase = normalize(" ".join(query_tokens))
-        title_phrase = normalize(item["title"])
+        title_tokens = item["title_tokens"]
 
-        if query_phrase and query_phrase in title_phrase:
+        if _contains_token_phrase(query_tokens, title_tokens):
             score += 70
-        if title_phrase and title_phrase in normalize(query):
+
+        if _contains_token_phrase(title_tokens, query_tokens):
             score += 70
 
         for query_word in query_tokens:
-            for title_word in item["title_tokens"]:
-                ratio = SequenceMatcher(
-                    None,
-                    stem(query_word),
-                    stem(title_word),
-                ).ratio()
+            for title_word in title_tokens:
+                ratio = _fuzzy_ratio(query_word, title_word)
+
                 if ratio >= 0.88:
                     score += 25
                 elif ratio >= 0.78:
@@ -302,9 +336,14 @@ def best_catalog_match(
 
 def looks_like_store_request(text: str) -> bool:
     normalized = normalize(text)
+
     if contains_any(normalized, PRODUCT_GENERIC_WORDS):
         return True
-    return any(pattern.search(normalized) for pattern in STORE_PATTERNS)
+
+    return any(
+        pattern.search(normalized)
+        for pattern in STORE_PATTERNS
+    )
 
 
 def route_query(text: str) -> Route:
@@ -314,19 +353,40 @@ def route_query(text: str) -> Route:
         return Route("unknown", 1.0, "empty")
 
     if contains_any(normalized, PSYCHOLOGIST_WORDS):
-        return Route("psychologist", 0.98, "psychologist_marker")
+        return Route(
+            "psychologist",
+            0.98,
+            "psychologist_marker",
+        )
 
     if contains_any(normalized, CONTACT_WORDS):
-        return Route("contacts", 0.95, "contact_marker")
+        return Route(
+            "contacts",
+            0.95,
+            "contact_marker",
+        )
 
     if contains_any(normalized, REVIEWS_WORDS):
-        return Route("reviews", 0.95, "reviews_marker")
+        return Route(
+            "reviews",
+            0.95,
+            "reviews_marker",
+        )
 
-    product_score, product = best_catalog_match(normalized, "product")
-    tour_score, tour = best_catalog_match(normalized, "tour")
+    product_score, product = best_catalog_match(
+        normalized,
+        "product",
+    )
+    tour_score, tour = best_catalog_match(
+        normalized,
+        "tour",
+    )
 
     store_context = looks_like_store_request(normalized)
-    tour_context = contains_any(normalized, TOUR_GENERIC_WORDS)
+    tour_context = contains_any(
+        normalized,
+        TOUR_GENERIC_WORDS,
+    )
 
     if product and product_score >= 30:
         if product_score >= tour_score or store_context:
@@ -349,18 +409,33 @@ def route_query(text: str) -> Route:
             )
 
     if tour_context:
-        return Route("tour", 0.88, "generic_tour_request")
+        return Route(
+            "tour",
+            0.88,
+            "generic_tour_request",
+        )
 
     if store_context:
-        return Route("product", 0.82, "store_request_without_match")
+        return Route(
+            "product",
+            0.82,
+            "store_request_without_match",
+        )
 
-    return Route("unknown", 0.25, "no_safe_route")
+    return Route(
+        "unknown",
+        0.25,
+        "no_safe_route",
+    )
 
 
 if __name__ == "__main__":
     import sys
 
-    query = " ".join(sys.argv[1:]).strip() or "У вас Тяньши есть?"
+    query = (
+        " ".join(sys.argv[1:]).strip()
+        or "У вас Тяньши есть?"
+    )
     result = route_query(query)
 
     print(f"Query: {query}")
