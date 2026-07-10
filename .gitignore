@@ -16,3 +16,8 @@ _backup_*/
 apply_*.py
 knowledge/
 test_*.bat
+
+# Local installers and backups
+_backup_*/
+apply_*.py
+*.bak
