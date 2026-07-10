@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .env
+.continue/
 data/knowledge.json
 data/dialogs.jsonl
 logs/
@@ -26,3 +27,4 @@ apply_*.py
 _backup_*/
 apply_*.py
 *.bak
+.continue/
