@@ -1,0 +1,5 @@
+@echo off
+chcp 65001 > nul
+call .venv\Scripts\activate.bat
+python -m backend.rag.site_inventory
+pause

@@ -46,5 +46,11 @@
     "title": "Политика обработки персональных данных",
     "enabled": true,
     "priority": 0
+  },
+  "https://svet-lotosa.tilda.ws/18-dney-tur-tibet-kailas-22-sent-9-oct": {
+    "type": "tour",
+    "title": "Тибет + Кайлас — 18 дней",
+    "enabled": true,
+    "priority": 120
   }
 }

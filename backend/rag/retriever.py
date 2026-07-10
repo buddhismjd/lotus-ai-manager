@@ -9,12 +9,13 @@ from backend.storage.database import get_connection, initialize_database
 STOPWORDS = {
     "что", "как", "где", "когда", "есть", "мне", "можно", "хочу",
     "покажи", "расскажи", "про", "для", "или", "это", "какой", "какая",
+    "поехать", "поездка",
 }
 
 INTENT_TYPES = {
     "tour": {
-        "тур", "поездка", "путешествие", "кайлас", "лапчи",
-        "тибет", "непал", "бутан", "индия", "ретрит",
+        "тур", "путешествие", "кайлас", "лапчи", "тибет",
+        "непал", "бутан", "индия", "ретрит", "куллу",
     },
     "product": {
         "товар", "купить", "статуя", "чётки", "четки",
@@ -31,6 +32,37 @@ ALLOWED_TYPES = {
     "psychologist": {"psychologist"},
 }
 
+ENTITY_ALIASES = {
+    "kailas": {
+        "кайлас", "гора кайлас", "кора кайлас", "кора вокруг кайласа",
+        "манасаровар", "дарчен", "тибет",
+    },
+    "lapchi": {
+        "лапчи", "лапчхи", "миларепа", "гора миларепы", "место силы миларепы",
+    },
+    "india": {
+        "индия", "долина куллу", "куллу", "рерих", "рериха",
+    },
+    "bhutan": {
+        "бутан", "бхутан",
+    },
+    "nepal": {
+        "непал", "катманду",
+    },
+    "tibet": {
+        "тибет", "западный тибет",
+    },
+}
+
+ENTITY_LABELS = {
+    "kailas": "Кайлас",
+    "lapchi": "Лапчи / место силы Миларепы",
+    "india": "Индия",
+    "bhutan": "Бутан",
+    "nepal": "Непал",
+    "tibet": "Тибет",
+}
+
 
 @dataclass
 class SearchResult:
@@ -40,6 +72,11 @@ class SearchResult:
     page_type: str
     content: str
     score: float
+    matched_entity: str | None = None
+
+
+def normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text.lower().replace("ё", "е")).strip()
 
 
 def tokenize(text: str) -> list[str]:
@@ -54,7 +91,6 @@ def detect_intent(query: str) -> str | None:
 
     for page_type, markers in INTENT_TYPES.items():
         score = len(words & markers)
-
         if score > best_score:
             best_type = page_type
             best_score = score
@@ -62,10 +98,35 @@ def detect_intent(query: str) -> str | None:
     return best_type
 
 
+def detect_entity(query: str) -> str | None:
+    query_normalized = normalize(query)
+
+    matches: list[tuple[int, str]] = []
+    for entity, aliases in ENTITY_ALIASES.items():
+        for alias in aliases:
+            alias_normalized = normalize(alias)
+            if alias_normalized in query_normalized:
+                matches.append((len(alias_normalized), entity))
+
+    if not matches:
+        return None
+
+    matches.sort(reverse=True)
+    return matches[0][1]
+
+
+def document_matches_entity(title: str, content: str, entity: str) -> bool:
+    haystack = normalize(f"{title} {content}")
+    aliases = ENTITY_ALIASES.get(entity, set())
+    return any(normalize(alias) in haystack for alias in aliases)
+
+
 def search(query: str, limit: int = 5) -> list[SearchResult]:
     initialize_database()
+
     tokens = tokenize(query)
     intent = detect_intent(query)
+    entity = detect_entity(query)
     allowed_types = ALLOWED_TYPES.get(intent) if intent else None
 
     with get_connection() as connection:
@@ -90,22 +151,40 @@ def search(query: str, limit: int = 5) -> list[SearchResult]:
         if allowed_types and row["page_type"] not in allowed_types:
             continue
 
-        title_lower = row["title"].lower()
-        text = f"{row['title']} {row['content']}".lower()
+        title_lower = normalize(row["title"])
+        text = normalize(f"{row['title']} {row['content']}")
         score = float(row["priority"]) / 20.0
 
         for token in tokens:
-            if token in title_lower:
+            token_normalized = normalize(token)
+
+            if token_normalized in title_lower:
                 score += 8
 
-            if token in text:
-                score += 3 + text.count(token)
+            if token_normalized in text:
+                score += 3 + text.count(token_normalized)
 
         if intent:
             if row["page_type"] == intent:
                 score += 20
-            elif row["page_type"] in allowed_types:
+            elif allowed_types and row["page_type"] in allowed_types:
                 score += 8
+
+        if entity:
+            is_match = document_matches_entity(
+                row["title"],
+                row["content"],
+                entity,
+            )
+
+            if row["page_type"] == "tour":
+                if is_match:
+                    score += 60
+                else:
+                    # Важное правило: другой конкретный тур не подставляем.
+                    continue
+            elif row["page_type"] == "tour_catalog":
+                score += 2
 
         if score > 0:
             results.append(
@@ -116,6 +195,7 @@ def search(query: str, limit: int = 5) -> list[SearchResult]:
                     page_type=row["page_type"],
                     content=row["content"],
                     score=score,
+                    matched_entity=entity,
                 )
             )
 
@@ -139,9 +219,11 @@ def search(query: str, limit: int = 5) -> list[SearchResult]:
 
 def print_results(query: str) -> None:
     results = search(query)
+    entity = detect_entity(query)
 
     print(f"Query: {query}")
     print(f"Intent: {detect_intent(query) or 'general'}")
+    print(f"Entity: {ENTITY_LABELS.get(entity, entity) if entity else 'none'}")
     print()
 
     if not results:
@@ -157,5 +239,5 @@ def print_results(query: str) -> None:
 if __name__ == "__main__":
     import sys
 
-    query = " ".join(sys.argv[1:]).strip() or "Есть тур в Индию?"
+    query = " ".join(sys.argv[1:]).strip() or "Хочу на Кайлас"
     print_results(query)
