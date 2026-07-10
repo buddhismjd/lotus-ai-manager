@@ -13,3 +13,4 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen2.5:3b')
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
 KNOWLEDGE_FILE = DATA_DIR / 'knowledge.json'
 DIALOGS_FILE = DATA_DIR / 'dialogs.jsonl'
+DATABASE_FILE = DATA_DIR / "lotus_ai.db"
