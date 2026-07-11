@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from backend.config import AI_PROVIDER, EMAIL_TO, OLLAMA_MODEL, SITE_URL
 from backend.services.ai_service import chat
+from backend.services.bodhi_service import answer_query
 from backend.services.dashboard_service import get_dashboard_data
 from backend.services.knowledge_service import load_knowledge, rebuild_knowledge, search_knowledge
 from backend.services.llm_service import ollama_available
@@ -100,6 +101,33 @@ async def api_chat(payload: dict) -> JSONResponse:
     if not message:
         return JSONResponse({"answer": "Напишите вопрос.", "status": "empty"})
     return JSONResponse(chat(message))
+
+
+
+
+@app.post("/api/bodhi/chat")
+async def api_bodhi_chat(payload: dict) -> JSONResponse:
+    message = (payload.get("message") or "").strip()
+
+    if not message:
+        return JSONResponse(
+            {
+                "answer": "Напишите вопрос.",
+                "status": "empty",
+            }
+        )
+
+    response = answer_query(message)
+
+    return JSONResponse(
+        {
+            "answer": response.text,
+            "status": f"bodhi_{response.kind}",
+            "kind": response.kind,
+            "title": response.title,
+            "url": response.url,
+        }
+    )
 
 
 @app.get("/chat-ui", response_class=HTMLResponse)
