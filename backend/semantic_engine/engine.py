@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from backend.knowledge_graph.loader import load_graph
 from backend.knowledge_graph.models import (
     EntityType,
     RelationType,
@@ -8,6 +7,7 @@ from backend.knowledge_graph.models import (
 from backend.knowledge_graph.repository import (
     KnowledgeGraphRepository,
 )
+from backend.knowledge_graph.runtime import build_runtime_graph
 from backend.semantic_engine.models import (
     SemanticAnswer,
     SemanticIntent,
@@ -41,7 +41,7 @@ RELATION_LABELS = {
     RelationType.BELONGS_TO_TRADITION: "Традиция",
     RelationType.LOCATED_IN: "Находится в",
     RelationType.INCLUDES_PRACTICE: "Практики",
-    RelationType.ASSOCIATED_WITH: "Связано с практикой",
+    RelationType.ASSOCIATED_WITH: "Связано с",
     RelationType.AVAILABLE_AS: "Доступно как",
 }
 
@@ -94,12 +94,16 @@ def _answer_describe(
     if related:
         lines.append("\n**Связанные знания:**")
 
-        for relation, target in related[:8]:
+        for relation, target in related[:12]:
             relation_label = RELATION_LABELS.get(
                 relation.relation_type,
                 relation.relation_type.value,
             )
-            lines.append(f"• {relation_label}: {target.name}")
+            status = dict(target.metadata).get("status", "")
+            suffix = f" ({status})" if status else ""
+            lines.append(
+                f"• {relation_label}: {target.name}{suffix}"
+            )
 
     return "\n".join(lines)
 
@@ -109,11 +113,31 @@ def _filter_related_by_type(
     entity_id: str,
     allowed_types: set[EntityType],
 ):
-    return tuple(
-        target
-        for _, target in _related_entities(repository, entity_id)
-        if target.entity_type in allowed_types
-    )
+    seen: set[str] = set()
+    result = []
+
+    for _, target in _related_entities(repository, entity_id):
+        if target.entity_type not in allowed_types:
+            continue
+        if target.entity_id in seen:
+            continue
+
+        seen.add(target.entity_id)
+        result.append(target)
+
+    return tuple(result)
+
+
+def _format_collection_item(item) -> str:
+    metadata = dict(item.metadata)
+    url = metadata.get("url", "")
+    status = metadata.get("status", "")
+    suffix = f" — {status}" if status else ""
+
+    if url:
+        return f"• {item.name}{suffix}\n  {url}"
+
+    return f"• {item.name}{suffix}"
 
 
 def _answer_collection(
@@ -142,9 +166,7 @@ def _answer_collection(
         )
         return "\n\n".join(lines)
 
-    for item in related:
-        lines.append(f"• {item.name}")
-
+    lines.extend(_format_collection_item(item) for item in related)
     return "\n".join(lines)
 
 
@@ -153,7 +175,7 @@ def answer_semantic_query(
     *,
     repository: KnowledgeGraphRepository | None = None,
 ) -> SemanticAnswer:
-    repository = repository or load_graph()
+    repository = repository or build_runtime_graph()
     parsed = parse_semantic_query(
         query,
         repository=repository,
