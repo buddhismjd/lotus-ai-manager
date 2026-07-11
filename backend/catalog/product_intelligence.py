@@ -4,8 +4,43 @@ import re
 from dataclasses import dataclass
 
 
+CYRILLIC_HOMOGLYPHS = str.maketrans(
+    {
+        "c": "с",
+        "a": "а",
+        "e": "е",
+        "o": "о",
+        "p": "р",
+        "x": "х",
+        "y": "у",
+        "k": "к",
+        "m": "м",
+        "t": "т",
+        "b": "в",
+        "h": "н",
+    }
+)
+
+
+def _repair_mixed_script_words(value: str) -> str:
+    words = value.split()
+    repaired: list[str] = []
+
+    for word in words:
+        has_cyrillic = bool(re.search(r"[а-яё]", word))
+        has_latin = bool(re.search(r"[a-z]", word))
+
+        if has_cyrillic and has_latin:
+            word = word.translate(CYRILLIC_HOMOGLYPHS)
+
+        repaired.append(word)
+
+    return " ".join(repaired)
+
+
 def normalize(text: str) -> str:
     value = (text or "").lower().replace("ё", "е")
+    value = _repair_mixed_script_words(value)
     value = re.sub(r"[^a-zа-я0-9\s-]", " ", value)
     return re.sub(r"\s+", " ", value).strip()
 
@@ -22,7 +57,18 @@ TITLE_TYPE_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("mala", ("четк", "мала")),
     ("vajra", ("ваджр",)),
     ("incense", ("благовон", "аромапал")),
-    ("ritual_item", ("бумп", "дигуг", "картик", "пхурб")),
+    (
+        "ritual_item",
+        (
+            "бумп",
+            "дигуг",
+            "картик",
+            "пхурб",
+            "наклейк",
+            "защитн наклейк",
+            "бутанск пенис",
+        ),
+    ),
 )
 
 DESCRIPTION_FALLBACK_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
