@@ -16,6 +16,8 @@ data/*.db-wal
 _backup_*/
 apply_*.py
 knowledge/
+!backend/knowledge/
+!backend/knowledge/**
 test_*.bat
 
 # Local installers and backups
