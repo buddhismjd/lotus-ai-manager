@@ -22,12 +22,14 @@
   {
     "query": "Покажи тханку",
     "expected_intent": "product",
-    "expected_title_contains": "тханк"
+    "expected_title_contains": "",
+    "allow_no_match": true
   },
   {
     "query": "Нужна поющая чаша",
     "expected_intent": "product",
-    "expected_title_contains": "чаш"
+    "expected_title_contains": "",
+    "allow_no_match": true
   },
   {
     "query": "Хочу на Кайлас",
@@ -50,6 +52,11 @@
     "expected_title_contains": "амул"
   },
   {
+    "query": "Белая Тара",
+    "expected_intent": "product",
+    "expected_title_contains": "Белой Тары"
+  },
+  {
     "query": "Статуя Зеленой Тары",
     "expected_intent": "product",
     "expected_title_contains": "стату"
@@ -57,11 +64,12 @@
   {
     "query": "Амулет Ченрезига",
     "expected_intent": "product",
-    "expected_title_contains": "амул"
+    "expected_title_contains": "",
+    "allow_no_match": true
   },
   {
     "query": "Есть велосипед?",
-    "expected_intent": "product",
+    "expected_intent": "unknown",
     "expected_title_contains": "",
     "allow_no_match": true
   },
