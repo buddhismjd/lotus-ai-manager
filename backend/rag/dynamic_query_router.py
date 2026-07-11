@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from functools import lru_cache
 from typing import Literal
 
+from backend.catalog.product_intelligence import analyze_product
 from backend.catalog.repositories import ProductRepository, TourRepository
 
 
@@ -141,6 +142,38 @@ PRODUCT_KIND_PREFIXES = {
 }
 
 
+PRODUCT_INTELLIGENCE_KIND_MAP = {
+    "singing_bowl": "bowl",
+}
+
+
+def _canonical_product_kind(kind: str | None) -> str | None:
+    if kind is None:
+        return None
+
+    return PRODUCT_INTELLIGENCE_KIND_MAP.get(kind, kind)
+
+
+def analyze_query_semantics(text: str) -> dict[str, object]:
+    intelligence = analyze_product(title=text)
+
+    return {
+        "product_kind": (
+            _canonical_product_kind(intelligence.product_type)
+            or detect_product_kind(text)
+        ),
+        "entities": {
+            normalize(entity)
+            for entity in intelligence.entities
+        },
+        "usages": set(intelligence.usages),
+        "materials": {
+            normalize(material)
+            for material in intelligence.materials
+        },
+    }
+
+
 def detect_product_kind(text: str) -> str | None:
     """
     Detect product type from stable lexical prefixes.
@@ -198,6 +231,68 @@ STOPWORDS = {
     "какие",
     "это",
 }
+
+
+QUERY_CORRECTIONS = {
+    "кайлос": "кайлас",
+    "каилас": "кайлас",
+    "четкии": "четки",
+    "стату": "статуя",
+}
+
+TOUR_CONTEXT_PREFIXES = (
+    "тур",
+    "поезд",
+    "путешеств",
+    "ретрит",
+    "паломнич",
+    "маршрут",
+    "поход",
+)
+
+PRODUCT_CONTEXT_PREFIXES = tuple(
+    prefix
+    for prefixes in PRODUCT_KIND_PREFIXES.values()
+    for prefix in prefixes
+)
+
+
+def correct_query(text: str) -> str:
+    words = normalize(text).split()
+    return " ".join(QUERY_CORRECTIONS.get(word, word) for word in words)
+
+
+def _has_prefix(text: str, prefixes: tuple[str, ...]) -> bool:
+    return any(
+        word.startswith(prefix)
+        for word in tokens(text)
+        for prefix in prefixes
+    )
+
+
+def looks_like_tour_request(text: str) -> bool:
+    return _has_prefix(text, TOUR_CONTEXT_PREFIXES)
+
+
+def _content_tokens(query: str, page_type: str) -> list[str]:
+    result: list[str] = []
+
+    for word in tokens(query):
+        if page_type == "tour" and any(
+            word.startswith(prefix)
+            for prefix in TOUR_CONTEXT_PREFIXES
+        ):
+            continue
+
+        if page_type == "product" and any(
+            word.startswith(prefix)
+            for prefix in PRODUCT_CONTEXT_PREFIXES
+        ):
+            continue
+
+        result.append(word)
+
+    return result
 
 
 @dataclass(frozen=True)
@@ -314,6 +409,9 @@ def _index_item(
     url: str,
     searchable_parts: list[str | None],
     product_kind: str | None = None,
+    product_entities: tuple[str, ...] = (),
+    product_usages: tuple[str, ...] = (),
+    product_materials: tuple[str, ...] = (),
 ) -> dict:
     searchable = " ".join(
         part.strip()
@@ -332,7 +430,16 @@ def _index_item(
         "search_tokens": search_tokens,
         "title_stems": {stem(word) for word in title_tokens},
         "search_stems": {stem(word) for word in search_tokens},
-        "product_kind": product_kind,
+        "product_kind": _canonical_product_kind(product_kind),
+        "product_entities": {
+            normalize(entity)
+            for entity in product_entities
+        },
+        "product_usages": set(product_usages),
+        "product_materials": {
+            normalize(material)
+            for material in product_materials
+        },
     }
 
 
@@ -344,30 +451,51 @@ def catalog_index() -> dict[str, list[dict]]:
     }
 
     for product in ProductRepository().list_all():
-        product_kind = detect_product_kind(
-            " ".join(
-                part
-                for part in [
-                    product.title,
-                    product.category,
-                    product.description,
-                ]
-                if part
+        title = product.title or ""
+        category = getattr(product, "category", "") or ""
+        description = getattr(product, "description", "") or ""
+        material = getattr(product, "material", "") or ""
+        keywords = getattr(product, "keywords", []) or []
+        sku = getattr(product, "sku", "") or ""
+
+        intelligence = analyze_product(
+            title=title,
+            description=description,
+            category=category,
+            sku=sku,
+        )
+
+        product_kind = (
+            _canonical_product_kind(intelligence.product_type)
+            or detect_product_kind(
+                " ".join(
+                    part
+                    for part in [
+                        title,
+                        category,
+                        description,
+                    ]
+                    if part
+                )
             )
         )
 
         index["product"].append(
             _index_item(
-                title=product.title,
+                title=title,
                 url=product.url,
                 searchable_parts=[
-                    product.title,
-                    product.category,
-                    product.description,
-                    product.material,
-                    " ".join(product.keywords),
+                    title,
+                    category,
+                    description,
+                    material,
+                    " ".join(keywords),
+                    intelligence.to_search_text(),
                 ],
                 product_kind=product_kind,
+                product_entities=intelligence.entities,
+                product_usages=intelligence.usages,
+                product_materials=intelligence.materials,
             )
         )
 
@@ -399,37 +527,102 @@ def best_catalog_match(
     query: str,
     page_type: str,
 ) -> tuple[float, dict | None]:
-    query_tokens = tokens(query)
+    query_tokens = _content_tokens(query, page_type)
     query_stems = {stem(word) for word in query_tokens}
-
-    if not query_tokens:
-        return 0.0, None
+    semantics = analyze_query_semantics(query)
 
     requested_product_kind = (
-        detect_product_kind(query)
+        semantics["product_kind"]
         if page_type == "product"
         else None
     )
+    requested_entities = (
+        semantics["entities"]
+        if page_type == "product"
+        else set()
+    )
+    requested_usages = (
+        semantics["usages"]
+        if page_type == "product"
+        else set()
+    )
+    requested_materials = (
+        semantics["materials"]
+        if page_type == "product"
+        else set()
+    )
+
+    candidates = catalog_index().get(page_type, [])
+
+    if requested_product_kind:
+        candidates = [
+            item
+            for item in candidates
+            if item.get("product_kind") == requested_product_kind
+        ]
+
+    if not candidates:
+        return 0.0, None
+
+    # A named Buddhist entity is a hard constraint. It is safer to say that
+    # no exact item was found than to replace Chenrezig with another deity.
+    if requested_entities:
+        entity_candidates = [
+            item
+            for item in candidates
+            if requested_entities & item.get("product_entities", set())
+        ]
+
+        if not entity_candidates:
+            return 0.0, None
+
+        candidates = entity_candidates
+
+    # A request containing only a product type may safely return the first
+    # item within that exact type.
+    if (
+        page_type == "product"
+        and requested_product_kind
+        and not query_tokens
+        and not requested_entities
+        and not requested_usages
+        and not requested_materials
+    ):
+        return 40.0, candidates[0]
+
+    if not query_tokens and not (
+        requested_entities
+        or requested_usages
+        or requested_materials
+    ):
+        return 0.0, None
 
     best_score = 0.0
     best_item = None
 
-    for item in catalog_index().get(page_type, []):
-        item_product_kind = item.get("product_kind")
-
-        if (
-            requested_product_kind
-            and item_product_kind != requested_product_kind
-        ):
-            continue
-
+    for item in candidates:
         score = 0.0
+        semantic_hits = 0
 
-        if (
-            requested_product_kind
-            and item_product_kind == requested_product_kind
-        ):
-            score += 250
+        item_entities = item.get("product_entities", set())
+        item_usages = item.get("product_usages", set())
+        item_materials = item.get("product_materials", set())
+
+        entity_hits = len(requested_entities & item_entities)
+        usage_hits = len(requested_usages & item_usages)
+        material_hits = len(requested_materials & item_materials)
+
+        if entity_hits:
+            score += entity_hits * 160
+            semantic_hits += entity_hits
+
+        if usage_hits:
+            score += usage_hits * 110
+            semantic_hits += usage_hits
+
+        if material_hits:
+            score += material_hits * 70
+            semantic_hits += material_hits
 
         title_stems = item["title_stems"]
         search_stems = item["search_stems"]
@@ -438,7 +631,7 @@ def best_catalog_match(
         search_hits = len(query_stems & search_stems)
 
         score += exact_title_hits * 70
-        score += max(0, search_hits - exact_title_hits) * 10
+        score += max(0, search_hits - exact_title_hits) * 25
 
         title_tokens = item["title_tokens"]
 
@@ -448,14 +641,32 @@ def best_catalog_match(
         if _contains_token_phrase(title_tokens, query_tokens):
             score += 100
 
-        for query_word in query_tokens:
-            for title_word in title_tokens:
-                ratio = _fuzzy_ratio(query_word, title_word)
+        fuzzy_hits = 0
 
-                if ratio >= 0.88:
-                    score += 25
-                elif ratio >= 0.78:
-                    score += 10
+        for query_word in query_tokens:
+            best_ratio = max(
+                (
+                    _fuzzy_ratio(query_word, title_word)
+                    for title_word in title_tokens
+                ),
+                default=0.0,
+            )
+
+            if best_ratio >= 0.88:
+                score += 40
+                fuzzy_hits += 1
+            elif best_ratio >= 0.78:
+                score += 20
+                fuzzy_hits += 1
+
+        # No random fallback: a candidate needs lexical or semantic evidence.
+        if (
+            exact_title_hits == 0
+            and search_hits == 0
+            and fuzzy_hits == 0
+            and semantic_hits == 0
+        ):
+            continue
 
         if score > best_score:
             best_score = score
@@ -477,7 +688,7 @@ def looks_like_store_request(text: str) -> bool:
 
 
 def route_query(text: str) -> Route:
-    normalized = normalize(text)
+    normalized = correct_query(text)
 
     if not normalized:
         return Route("unknown", 1.0, "empty")
@@ -503,6 +714,13 @@ def route_query(text: str) -> Route:
             "reviews_marker",
         )
 
+    requested_product_kind = detect_product_kind(normalized)
+    product_context = (
+        requested_product_kind is not None
+        or looks_like_store_request(normalized)
+    )
+    tour_context = looks_like_tour_request(normalized)
+
     product_score, product = best_catalog_match(
         normalized,
         "product",
@@ -512,14 +730,42 @@ def route_query(text: str) -> Route:
         "tour",
     )
 
-    store_context = looks_like_store_request(normalized)
-    tour_context = contains_any(
-        normalized,
-        TOUR_GENERIC_WORDS,
-    )
+    # Explicit travel language wins over products that merely mention
+    # the same country in their title or description.
+    if tour_context:
+        if tour and tour_score >= 20:
+            return Route(
+                "tour",
+                min(0.99, 0.65 + tour_score / 200),
+                "dynamic_tour_match",
+                tour["title"],
+                tour["url"],
+            )
+
+        return Route(
+            "tour",
+            0.88,
+            "generic_tour_request",
+        )
+
+    if product_context:
+        if product and product_score >= 20:
+            return Route(
+                "product",
+                min(0.99, 0.65 + product_score / 200),
+                "dynamic_product_match",
+                product["title"],
+                product["url"],
+            )
+
+        return Route(
+            "product",
+            0.82,
+            "store_request_without_match",
+        )
 
     if product and product_score >= 30:
-        if product_score >= tour_score or store_context:
+        if product_score >= tour_score:
             return Route(
                 "product",
                 min(0.99, 0.65 + product_score / 200),
@@ -529,7 +775,7 @@ def route_query(text: str) -> Route:
             )
 
     if tour and tour_score >= 30:
-        if tour_score > product_score or tour_context:
+        if tour_score > product_score:
             return Route(
                 "tour",
                 min(0.99, 0.65 + tour_score / 200),
@@ -537,20 +783,6 @@ def route_query(text: str) -> Route:
                 tour["title"],
                 tour["url"],
             )
-
-    if tour_context:
-        return Route(
-            "tour",
-            0.88,
-            "generic_tour_request",
-        )
-
-    if store_context:
-        return Route(
-            "product",
-            0.82,
-            "store_request_without_match",
-        )
 
     return Route(
         "unknown",
