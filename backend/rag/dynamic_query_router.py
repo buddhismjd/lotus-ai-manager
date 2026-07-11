@@ -7,7 +7,36 @@ from functools import lru_cache
 from typing import Literal
 
 from backend.catalog.product_intelligence import analyze_product
+from backend.catalog.product_profiles import get_product_profile
 from backend.catalog.repositories import ProductRepository, TourRepository
+
+
+PRODUCT_UID_RE = re.compile(
+    r"/tproduct/(?P<uid>\d+)",
+    re.IGNORECASE,
+)
+
+
+def _product_profile_id_from_url(url: str) -> str | None:
+    match = PRODUCT_UID_RE.search(url or "")
+
+    if not match:
+        return None
+
+    return f"product-{match.group('uid')}"
+
+
+def _safe_get_product_profile(url: str):
+    profile_id = _product_profile_id_from_url(url)
+
+    if not profile_id:
+        return None
+
+    try:
+        return get_product_profile(profile_id)
+    except Exception:
+        # Search remains available if profiles are not initialized yet.
+        return None
 
 
 Intent = Literal[
@@ -458,27 +487,42 @@ def catalog_index() -> dict[str, list[dict]]:
         keywords = getattr(product, "keywords", []) or []
         sku = getattr(product, "sku", "") or ""
 
-        intelligence = analyze_product(
-            title=title,
-            description=description,
-            category=category,
-            sku=sku,
-        )
+        profile = _safe_get_product_profile(product.url)
 
-        product_kind = (
-            _canonical_product_kind(intelligence.product_type)
-            or detect_product_kind(
-                " ".join(
-                    part
-                    for part in [
-                        title,
-                        category,
-                        description,
-                    ]
-                    if part
+        if profile is not None:
+            product_kind = _canonical_product_kind(
+                profile.product_type
+            )
+            entities = profile.entities
+            usages = profile.usages
+            materials = profile.materials
+            profile_text = profile.to_search_text()
+        else:
+            intelligence = analyze_product(
+                title=title,
+                description=description,
+                category=category,
+                sku=sku,
+            )
+
+            product_kind = (
+                _canonical_product_kind(intelligence.product_type)
+                or detect_product_kind(
+                    " ".join(
+                        part
+                        for part in [
+                            title,
+                            category,
+                            description,
+                        ]
+                        if part
+                    )
                 )
             )
-        )
+            entities = intelligence.entities
+            usages = intelligence.usages
+            materials = intelligence.materials
+            profile_text = intelligence.to_search_text()
 
         index["product"].append(
             _index_item(
@@ -490,12 +534,12 @@ def catalog_index() -> dict[str, list[dict]]:
                     description,
                     material,
                     " ".join(keywords),
-                    intelligence.to_search_text(),
+                    profile_text,
                 ],
                 product_kind=product_kind,
-                product_entities=intelligence.entities,
-                product_usages=intelligence.usages,
-                product_materials=intelligence.materials,
+                product_entities=entities,
+                product_usages=usages,
+                product_materials=materials,
             )
         )
 
