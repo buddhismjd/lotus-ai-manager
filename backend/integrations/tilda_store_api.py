@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from backend.catalog.product_intelligence import analyze_product
 from backend.parser.site_parser import chunk_text
 from backend.storage.database import save_document
 
@@ -355,6 +356,13 @@ def fetch_all_products(
 
 
 def product_to_document(product: StoreProduct) -> dict[str, Any]:
+    intelligence = analyze_product(
+        title=product.title,
+        description=product.description,
+        category=product.category,
+        sku=product.sku,
+    )
+
     details = [
         product.title,
         product.description,
@@ -366,6 +374,7 @@ def product_to_document(product: StoreProduct) -> dict[str, Any]:
         ),
         f"SKU: {product.sku}" if product.sku else "",
         f"Изображение: {product.image_url}" if product.image_url else "",
+        intelligence.to_search_text(),
     ]
 
     content = "\n".join(
@@ -385,7 +394,14 @@ def product_to_document(product: StoreProduct) -> dict[str, Any]:
         "type": "product",
         "title": product.title,
         "url": product.url,
-        "summary": product.description[:600],
+        "summary": "\n".join(
+            part
+            for part in [
+                product.description[:500],
+                intelligence.to_search_text(),
+            ]
+            if part
+        )[:1000],
         "content": content,
         "enabled": True,
         "priority": 160,
