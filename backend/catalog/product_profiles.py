@@ -45,15 +45,25 @@ class ProductProfile:
     keywords: tuple[str, ...] = ()
     source_hash: str | None = None
 
+    @property
+    def primary_aspect(self) -> str | None:
+        """User-facing alias for the legacy database field."""
+        return self.primary_entity
+
+    @property
+    def aspects(self) -> tuple[str, ...]:
+        """User-facing alias for the legacy database field."""
+        return self.entities
+
     def to_search_text(self) -> str:
         parts: list[str] = []
 
         if self.product_type:
             parts.append(f"Тип товара: {self.product_type}")
         if self.primary_entity:
-            parts.append(f"Основная сущность: {self.primary_entity}")
+            parts.append(f"Основной аспект: {self.primary_entity}")
         if self.entities:
-            parts.append("Сущности: " + ", ".join(self.entities))
+            parts.append("Аспекты: " + ", ".join(self.entities))
         if self.materials:
             parts.append("Материалы: " + ", ".join(self.materials))
         if self.usages:

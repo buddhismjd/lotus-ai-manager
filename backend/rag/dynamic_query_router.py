@@ -6,8 +6,13 @@ from difflib import SequenceMatcher
 from functools import lru_cache
 from typing import Literal
 
+from backend.catalog.product_features import (
+    dimension_distance,
+    extract_product_features,
+)
 from backend.catalog.product_intelligence import analyze_product
 from backend.catalog.product_profiles import get_product_profile
+from backend.catalog.text_normalization import normalize_search_text
 from backend.catalog.repositories import ProductRepository, TourRepository
 
 
@@ -331,12 +336,12 @@ class Route:
     reason: str
     matched_title: str | None = None
     matched_url: str | None = None
+    alternatives: tuple[tuple[str, str], ...] = ()
+    matched_note: str | None = None
 
 
 def normalize(text: str) -> str:
-    value = (text or "").lower().replace("ё", "е")
-    value = re.sub(r"[^a-zа-я0-9\s-]", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
+    return normalize_search_text(text)
 
 
 def tokens(text: str) -> list[str]:
@@ -441,6 +446,8 @@ def _index_item(
     product_entities: tuple[str, ...] = (),
     product_usages: tuple[str, ...] = (),
     product_materials: tuple[str, ...] = (),
+    product_dimensions_cm: tuple[float, ...] = (),
+    product_point_counts: tuple[int, ...] = (),
 ) -> dict:
     searchable = " ".join(
         part.strip()
@@ -469,6 +476,8 @@ def _index_item(
             normalize(material)
             for material in product_materials
         },
+        "product_dimensions_cm": tuple(product_dimensions_cm),
+        "product_point_counts": tuple(product_point_counts),
     }
 
 
@@ -487,6 +496,9 @@ def catalog_index() -> dict[str, list[dict]]:
         keywords = getattr(product, "keywords", []) or []
         sku = getattr(product, "sku", "") or ""
 
+        product_features = extract_product_features(
+            " ".join([title, description, category])
+        )
         profile = _safe_get_product_profile(product.url)
 
         if profile is not None:
@@ -540,6 +552,8 @@ def catalog_index() -> dict[str, list[dict]]:
                 product_entities=entities,
                 product_usages=usages,
                 product_materials=materials,
+                product_dimensions_cm=product_features.dimensions_cm,
+                product_point_counts=product_features.point_counts,
             )
         )
 
@@ -566,6 +580,71 @@ def catalog_index() -> dict[str, list[dict]]:
 def reload_catalog_index() -> None:
     catalog_index.cache_clear()
 
+
+
+_QUERY_DIMENSION_RE = re.compile(
+    r"(?<!\d)(\d{1,3}(?:[.,]\d+)?)\s*(?:см|cm)\b",
+    re.IGNORECASE,
+)
+
+
+def _requested_dimension_cm(query: str) -> float | None:
+    match = _QUERY_DIMENSION_RE.search(query or "")
+
+    if not match:
+        return None
+
+    try:
+        return float(match.group(1).replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _requested_point_count(query: str) -> int | None:
+    features = extract_product_features(query)
+    return features.point_counts[0] if features.point_counts else None
+
+
+def _aspect_alternatives(
+    requested_aspects: set[str],
+    candidates: list[dict],
+    limit: int = 6,
+) -> tuple[tuple[str, str], ...]:
+    if not requested_aspects:
+        return ()
+
+    matching = [
+        item
+        for item in candidates
+        if requested_aspects & item.get("product_entities", set())
+    ]
+
+    # Show different product types first, then additional options.
+    result: list[tuple[str, str]] = []
+    seen_types: set[str] = set()
+
+    for item in matching:
+        product_type = item.get("product_kind") or "unknown"
+
+        if product_type in seen_types:
+            continue
+
+        result.append((item["title"], item["url"]))
+        seen_types.add(product_type)
+
+        if len(result) >= limit:
+            return tuple(result)
+
+    for item in matching:
+        pair = (item["title"], item["url"])
+
+        if pair not in result:
+            result.append(pair)
+
+        if len(result) >= limit:
+            break
+
+    return tuple(result)
 
 def best_catalog_match(
     query: str,
@@ -595,6 +674,16 @@ def best_catalog_match(
         if page_type == "product"
         else set()
     )
+    requested_dimension = (
+        _requested_dimension_cm(query)
+        if page_type == "product"
+        else None
+    )
+    requested_point_count = (
+        _requested_point_count(query)
+        if page_type == "product"
+        else None
+    )
 
     candidates = catalog_index().get(page_type, [])
 
@@ -621,6 +710,23 @@ def best_catalog_match(
             return 0.0, None
 
         candidates = entity_candidates
+
+    if requested_dimension is not None:
+        dimension_candidates = [
+            item
+            for item in candidates
+            if (
+                (distance := dimension_distance(
+                    requested_dimension,
+                    item.get("product_dimensions_cm", ()),
+                ))
+                is not None
+                and distance <= 5
+            )
+        ]
+
+        if dimension_candidates:
+            candidates = dimension_candidates
 
     # A request containing only a product type may safely return the first
     # item within that exact type.
@@ -655,6 +761,33 @@ def best_catalog_match(
         entity_hits = len(requested_entities & item_entities)
         usage_hits = len(requested_usages & item_usages)
         material_hits = len(requested_materials & item_materials)
+
+        dimension_match = None
+
+        if requested_dimension is not None:
+            dimension_match = dimension_distance(
+                requested_dimension,
+                item.get("product_dimensions_cm", ()),
+            )
+
+            if dimension_match is not None:
+                if dimension_match == 0:
+                    score += 260
+                    semantic_hits += 1
+                elif dimension_match <= 5:
+                    score += 220 - dimension_match * 20
+                    semantic_hits += 1
+                elif dimension_match <= 10:
+                    score += 70 - dimension_match * 4
+
+        if requested_point_count is not None:
+            point_counts = item.get("product_point_counts", ())
+
+            if requested_point_count in point_counts:
+                score += 220
+                semantic_hits += 1
+            elif point_counts:
+                score -= 180
 
         if entity_hits:
             score += entity_hits * 160
@@ -794,12 +927,33 @@ def route_query(text: str) -> Route:
 
     if product_context:
         if product and product_score >= 20:
+            semantics = analyze_query_semantics(normalized)
+            requested_aspects = semantics["entities"]
+            alternatives = _aspect_alternatives(
+                requested_aspects,
+                catalog_index().get("product", []),
+            )
+            requested_points = _requested_point_count(normalized)
+            note = None
+
+            if (
+                requested_points is not None
+                and requested_points
+                not in product.get("product_point_counts", ())
+            ):
+                note = (
+                    f"В описании товара не указано, что он "
+                    f"{requested_points}-конечный."
+                )
+
             return Route(
                 "product",
                 min(0.99, 0.65 + product_score / 200),
                 "dynamic_product_match",
                 product["title"],
                 product["url"],
+                alternatives,
+                note,
             )
 
         return Route(
@@ -810,12 +964,32 @@ def route_query(text: str) -> Route:
 
     if product and product_score >= 30:
         if product_score >= tour_score:
+            semantics = analyze_query_semantics(normalized)
+            alternatives = _aspect_alternatives(
+                semantics["entities"],
+                catalog_index().get("product", []),
+            )
+            requested_points = _requested_point_count(normalized)
+            note = None
+
+            if (
+                requested_points is not None
+                and requested_points
+                not in product.get("product_point_counts", ())
+            ):
+                note = (
+                    f"В описании товара не указано, что он "
+                    f"{requested_points}-конечный."
+                )
+
             return Route(
                 "product",
                 min(0.99, 0.65 + product_score / 200),
                 "dynamic_product_match",
                 product["title"],
                 product["url"],
+                alternatives,
+                note,
             )
 
     if tour and tour_score >= 30:
