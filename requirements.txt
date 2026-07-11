@@ -6,3 +6,4 @@ lxml
 python-dotenv
 jinja2
 httpx2
+httpx2
