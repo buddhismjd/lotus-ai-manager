@@ -67,6 +67,101 @@ PRODUCT_GENERIC_WORDS = {
     "продаёте",
 }
 
+PRODUCT_KIND_ALIASES = {
+    "statue": {
+        "статуя",
+        "статуэтка",
+        "скульптура",
+        "фигура",
+    },
+    "amulet": {
+        "амулет",
+        "подвеска",
+        "кулон",
+        "медальон",
+    },
+    "mala": {
+        "четки",
+        "чётки",
+        "мала",
+    },
+    "vajra": {
+        "ваджра",
+        "дордже",
+    },
+    "thangka": {
+        "танка",
+        "тханка",
+    },
+    "bowl": {
+        "чаша",
+        "поющая чаша",
+    },
+    "incense": {
+        "благовоние",
+        "благовония",
+        "аромапалочки",
+    },
+}
+
+
+PRODUCT_KIND_PREFIXES = {
+    "statue": (
+        "стату",
+        "статуй",
+        "скульптур",
+        "фигур",
+    ),
+    "amulet": (
+        "амулет",
+        "подвес",
+        "кулон",
+        "медальон",
+    ),
+    "mala": (
+        "четк",
+        "чётк",
+        "мала",
+    ),
+    "vajra": (
+        "ваджр",
+        "дордж",
+    ),
+    "thangka": (
+        "танк",
+        "тханк",
+    ),
+    "bowl": (
+        "чаш",
+    ),
+    "incense": (
+        "благовон",
+        "аромапал",
+    ),
+}
+
+
+def detect_product_kind(text: str) -> str | None:
+    """
+    Detect product type from stable lexical prefixes.
+
+    Prefix matching is intentional: Russian case endings differ strongly
+    (for example «статуя», «статую», «статуи», «статуй»), while the lexical
+    base «стату-» remains stable.
+    """
+    for word in tokens(text):
+        normalized_word = normalize(word)
+
+        for kind, prefixes in PRODUCT_KIND_PREFIXES.items():
+            if any(
+                normalized_word.startswith(prefix)
+                for prefix in prefixes
+            ):
+                return kind
+
+    return None
+
+
 STORE_PATTERNS = (
     re.compile(r"\bу\s+вас\s+.+\s+есть\b", re.IGNORECASE),
     re.compile(r"\bесть\s+ли\s+у\s+вас\b", re.IGNORECASE),
@@ -218,6 +313,7 @@ def _index_item(
     title: str,
     url: str,
     searchable_parts: list[str | None],
+    product_kind: str | None = None,
 ) -> dict:
     searchable = " ".join(
         part.strip()
@@ -236,6 +332,7 @@ def _index_item(
         "search_tokens": search_tokens,
         "title_stems": {stem(word) for word in title_tokens},
         "search_stems": {stem(word) for word in search_tokens},
+        "product_kind": product_kind,
     }
 
 
@@ -247,6 +344,18 @@ def catalog_index() -> dict[str, list[dict]]:
     }
 
     for product in ProductRepository().list_all():
+        product_kind = detect_product_kind(
+            " ".join(
+                part
+                for part in [
+                    product.title,
+                    product.category,
+                    product.description,
+                ]
+                if part
+            )
+        )
+
         index["product"].append(
             _index_item(
                 title=product.title,
@@ -258,6 +367,7 @@ def catalog_index() -> dict[str, list[dict]]:
                     product.material,
                     " ".join(product.keywords),
                 ],
+                product_kind=product_kind,
             )
         )
 
@@ -295,11 +405,31 @@ def best_catalog_match(
     if not query_tokens:
         return 0.0, None
 
+    requested_product_kind = (
+        detect_product_kind(query)
+        if page_type == "product"
+        else None
+    )
+
     best_score = 0.0
     best_item = None
 
     for item in catalog_index().get(page_type, []):
+        item_product_kind = item.get("product_kind")
+
+        if (
+            requested_product_kind
+            and item_product_kind != requested_product_kind
+        ):
+            continue
+
         score = 0.0
+
+        if (
+            requested_product_kind
+            and item_product_kind == requested_product_kind
+        ):
+            score += 250
 
         title_stems = item["title_stems"]
         search_stems = item["search_stems"]
@@ -307,16 +437,16 @@ def best_catalog_match(
         exact_title_hits = len(query_stems & title_stems)
         search_hits = len(query_stems & search_stems)
 
-        score += exact_title_hits * 35
-        score += max(0, search_hits - exact_title_hits) * 8
+        score += exact_title_hits * 70
+        score += max(0, search_hits - exact_title_hits) * 10
 
         title_tokens = item["title_tokens"]
 
         if _contains_token_phrase(query_tokens, title_tokens):
-            score += 70
+            score += 140
 
         if _contains_token_phrase(title_tokens, query_tokens):
-            score += 70
+            score += 100
 
         for query_word in query_tokens:
             for title_word in title_tokens:
