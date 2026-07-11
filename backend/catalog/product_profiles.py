@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS product_profiles (
     keywords_json TEXT NOT NULL DEFAULT '[]',
     source_hash TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES documents(id) ON DELETE CASCADE
+    updated_at TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_profiles_type
@@ -69,9 +68,83 @@ class ProductProfile:
         return "\n".join(parts)
 
 
+def _product_profiles_has_foreign_key(connection) -> bool:
+    return bool(
+        connection.execute(
+            "PRAGMA foreign_key_list(product_profiles)"
+        ).fetchall()
+    )
+
+
+def _migrate_product_profiles_without_foreign_key(connection) -> None:
+    connection.execute("DROP INDEX IF EXISTS idx_product_profiles_type")
+    connection.execute("DROP INDEX IF EXISTS idx_product_profiles_entity")
+
+    connection.execute(
+        """
+        CREATE TABLE product_profiles_new (
+            product_id TEXT PRIMARY KEY,
+            product_type TEXT,
+            primary_entity TEXT,
+            entities_json TEXT NOT NULL DEFAULT '[]',
+            materials_json TEXT NOT NULL DEFAULT '[]',
+            usages_json TEXT NOT NULL DEFAULT '[]',
+            traditions_json TEXT NOT NULL DEFAULT '[]',
+            synonyms_json TEXT NOT NULL DEFAULT '[]',
+            keywords_json TEXT NOT NULL DEFAULT '[]',
+            source_hash TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+
+    connection.execute(
+        """
+        INSERT INTO product_profiles_new (
+            product_id,
+            product_type,
+            primary_entity,
+            entities_json,
+            materials_json,
+            usages_json,
+            traditions_json,
+            synonyms_json,
+            keywords_json,
+            source_hash,
+            created_at,
+            updated_at
+        )
+        SELECT
+            product_id,
+            product_type,
+            primary_entity,
+            entities_json,
+            materials_json,
+            usages_json,
+            traditions_json,
+            synonyms_json,
+            keywords_json,
+            source_hash,
+            created_at,
+            updated_at
+        FROM product_profiles
+        """
+    )
+
+    connection.execute("DROP TABLE product_profiles")
+    connection.execute(
+        "ALTER TABLE product_profiles_new RENAME TO product_profiles"
+    )
+    connection.executescript(PROFILE_SCHEMA)
+
+
 def initialize_product_profiles() -> None:
     with get_connection() as connection:
         connection.executescript(PROFILE_SCHEMA)
+
+        if _product_profiles_has_foreign_key(connection):
+            _migrate_product_profiles_without_foreign_key(connection)
 
 
 def _json_tuple(value: str | None) -> tuple[str, ...]:
