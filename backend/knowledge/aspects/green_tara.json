@@ -1,6 +1,7 @@
 {
   "id": "green_tara",
   "name": "Зелёная Тара",
+  "kind": "bodhisattva",
   "aliases": [
     "Зеленая Тара",
     "Зелёной Таре",
@@ -9,10 +10,28 @@
     "Зеленую Тару",
     "Green Tara"
   ],
-  "description": "",
+  "short_description": "Зелёная Тара — бодхисаттва деятельного сострадания и быстрой помощи.",
   "keywords": [
     "защита",
     "быстрая помощь",
     "сострадание"
+  ],
+  "related_knowledge_ids": [
+    "white_tara"
+  ],
+  "related_practices": [
+    "медитация"
+  ],
+  "related_places": [
+    "Тибет",
+    "Непал"
+  ],
+  "product_description_fields": [
+    "аспект",
+    "символика",
+    "материал",
+    "размер",
+    "происхождение",
+    "назначение"
   ]
 }

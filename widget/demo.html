@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+  <title>AI Бодхи — Widget Demo</title>
+  <link rel="stylesheet" href="widget.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #f6f0fb, #eee7f4);
+      font-family: Arial, sans-serif;
+    }
+
+    .demo {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 70px 24px;
+    }
+
+    .demo h1 {
+      color: #4d356c;
+    }
+
+    .demo p {
+      max-width: 620px;
+      color: #655d6b;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <main class="demo">
+    <h1>AI Бодхи</h1>
+    <p>
+      Нажмите на кнопку в правом нижнем углу,
+      чтобы проверить первый чат-виджет.
+    </p>
+  </main>
+
+  <div id="ai-bodhi-widget" class="ai-bodhi">
+  <button
+    id="ai-bodhi-toggle"
+    class="ai-bodhi__toggle"
+    type="button"
+    aria-label="Открыть чат AI Бодхи"
+    aria-expanded="false"
+  >
+    <span class="ai-bodhi__lotus" aria-hidden="true">✦</span>
+  </button>
+
+  <section
+    id="ai-bodhi-panel"
+    class="ai-bodhi__panel"
+    aria-label="Чат AI Бодхи"
+    hidden
+  >
+    <header class="ai-bodhi__header">
+      <div>
+        <div class="ai-bodhi__title">AI Бодхи</div>
+        <div class="ai-bodhi__subtitle">Помощник «Света Лотоса»</div>
+      </div>
+
+      <button
+        id="ai-bodhi-close"
+        class="ai-bodhi__close"
+        type="button"
+        aria-label="Закрыть чат"
+      >
+        ×
+      </button>
+    </header>
+
+    <div id="ai-bodhi-messages" class="ai-bodhi__messages">
+      <div class="ai-bodhi__message ai-bodhi__message--assistant">
+        <p>
+          🌸 Здравствуйте. Я AI Бодхи.
+        </p>
+        <p>
+          Помогу найти путешествие, буддийский предмет
+          или информацию о программах «Света Лотоса».
+        </p>
+      </div>
+    </div>
+
+    <div id="ai-bodhi-typing" class="ai-bodhi__typing" hidden>
+      AI Бодхи отвечает…
+    </div>
+
+    <form id="ai-bodhi-form" class="ai-bodhi__form">
+      <textarea
+        id="ai-bodhi-input"
+        class="ai-bodhi__input"
+        rows="1"
+        placeholder="Напишите ваш вопрос"
+        aria-label="Ваш вопрос"
+        required
+      ></textarea>
+
+      <button
+        id="ai-bodhi-send"
+        class="ai-bodhi__send"
+        type="submit"
+      >
+        Отправить
+      </button>
+    </form>
+  </section>
+</div>
+
+
+  <script>
+    window.AI_BODHI_API_URL =
+      "http://127.0.0.1:8000/api/bodhi/chat";
+  </script>
+  <script src="widget.js"></script>
+</body>
+</html>

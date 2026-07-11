@@ -1,0 +1,32 @@
+[
+  {
+    "source_id": "white_tara",
+    "relation_type": "related_to",
+    "target_id": "green_tara"
+  },
+  {
+    "source_id": "milarepa",
+    "relation_type": "practiced_at",
+    "target_id": "lapchi"
+  },
+  {
+    "source_id": "milarepa",
+    "relation_type": "belongs_to_tradition",
+    "target_id": "kagyu"
+  },
+  {
+    "source_id": "lapchi",
+    "relation_type": "located_in",
+    "target_id": "nepal"
+  },
+  {
+    "source_id": "milarepa",
+    "relation_type": "associated_with",
+    "target_id": "meditation"
+  },
+  {
+    "source_id": "vajra",
+    "relation_type": "related_to",
+    "target_id": "phurba"
+  }
+]

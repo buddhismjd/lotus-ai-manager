@@ -1,0 +1,74 @@
+<!-- AI Бодхи: вставить в T123 -->
+<link
+  rel="stylesheet"
+  href="https://YOUR-DOMAIN/widget/widget.css"
+/>
+
+<div id="ai-bodhi-widget" class="ai-bodhi">
+  <button
+    id="ai-bodhi-toggle"
+    class="ai-bodhi__toggle"
+    type="button"
+    aria-label="Открыть чат AI Бодхи"
+    aria-expanded="false"
+  >
+    <span class="ai-bodhi__lotus" aria-hidden="true">✦</span>
+  </button>
+
+  <section
+    id="ai-bodhi-panel"
+    class="ai-bodhi__panel"
+    aria-label="Чат AI Бодхи"
+    hidden
+  >
+    <header class="ai-bodhi__header">
+      <div>
+        <div class="ai-bodhi__title">AI Бодхи</div>
+        <div class="ai-bodhi__subtitle">
+          Помощник «Света Лотоса»
+        </div>
+      </div>
+      <button
+        id="ai-bodhi-close"
+        class="ai-bodhi__close"
+        type="button"
+        aria-label="Закрыть чат"
+      >×</button>
+    </header>
+
+    <div id="ai-bodhi-messages" class="ai-bodhi__messages">
+      <div class="ai-bodhi__message ai-bodhi__message--assistant">
+        🌸 Здравствуйте. Я AI Бодхи.
+
+        Помогу найти путешествие, буддийский предмет
+        или информацию о программах «Света Лотоса».
+      </div>
+    </div>
+
+    <div id="ai-bodhi-typing" class="ai-bodhi__typing" hidden>
+      AI Бодхи отвечает…
+    </div>
+
+    <form id="ai-bodhi-form" class="ai-bodhi__form">
+      <textarea
+        id="ai-bodhi-input"
+        class="ai-bodhi__input"
+        rows="1"
+        placeholder="Напишите ваш вопрос"
+        aria-label="Ваш вопрос"
+        required
+      ></textarea>
+      <button
+        id="ai-bodhi-send"
+        class="ai-bodhi__send"
+        type="submit"
+      >Отправить</button>
+    </form>
+  </section>
+</div>
+
+<script>
+  window.AI_BODHI_API_URL =
+    "https://YOUR-API-DOMAIN/api/bodhi/chat";
+</script>
+<script src="https://YOUR-DOMAIN/widget/widget.js"></script>

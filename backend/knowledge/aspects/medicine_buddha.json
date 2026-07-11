@@ -1,15 +1,34 @@
 {
   "id": "medicine_buddha",
   "name": "Будда Медицины",
+  "kind": "buddha",
   "aliases": [
     "Будды Медицины",
     "Будде Медицины",
     "Бхайшаджьягуру",
     "Medicine Buddha"
   ],
-  "description": "",
+  "short_description": "Будда Медицины — Будда, связанный с исцелением и устранением причин страдания.",
   "keywords": [
     "исцеление",
     "здоровье"
+  ],
+  "related_knowledge_ids": [
+    "white_tara"
+  ],
+  "related_practices": [
+    "медитация"
+  ],
+  "related_places": [
+    "Тибет",
+    "Непал"
+  ],
+  "product_description_fields": [
+    "аспект",
+    "символика",
+    "материал",
+    "размер",
+    "происхождение",
+    "назначение"
   ]
 }

@@ -1,143 +1,30 @@
-# AI Bodhi — Roadmap
+# AI Bodhi Roadmap
 
-## Текущий статус
+## Completed foundation
 
-### Завершено
+- Product profiles
+- Tour profiles
+- Aspect registry
+- Planned tours
+- Initial unified graph experiments
 
-- FastAPI backend;
-- SQLite;
-- Tilda Store API connector;
-- импорт 88/88 товаров;
-- Product Repository;
-- Tour Repository;
-- Product Intelligence;
-- структурированные `product_profiles`;
-- Dynamic Query Router;
-- Semantic Ranker v1;
-- чат-виджет;
-- benchmark;
-- диагностика;
-- GitHub-ветка `feature/structured-catalog`.
+## Current release
 
-## Milestone 1 — Product Profiles Integration
+Knowledge Graph 1.0:
 
-Цель: использовать таблицу `product_profiles` в поисковом индексе.
+- universal entity model
+- typed relations
+- JSON loader
+- repository
+- validator
+- tests
+- diagnostics
 
-Задачи:
+## Next releases
 
-- читать профиль товара по `product_id`;
-- использовать `product_type`;
-- использовать `primary_entity`;
-- использовать `usages`;
-- использовать `materials`;
-- использовать `synonyms`;
-- сохранять старую логику как fallback.
-
-Критерий готовности:
-
-- все текущие тесты зелёные;
-- benchmark по товарам улучшается;
-- отсутствующая сущность не заменяется другой.
-
-## Milestone 2 — Tour Intelligence
-
-Цель: создать структурированные профили туров.
-
-Поля:
-
-- страна;
-- регион;
-- направление;
-- даты;
-- продолжительность;
-- сложность;
-- высоты;
-- учителя;
-- практики;
-- места силы;
-- ключевые сущности.
-
-Приоритетные запросы:
-
-- «Поход в Лапчи»;
-- «Есть поездка в Непал?»;
-- «Хочу на Кайлас».
-
-## Milestone 3 — Knowledge Graph
-
-Связать:
-
-- товары;
-- туры;
-- статьи;
-- практики;
-- буддийские сущности.
-
-Примеры:
-
-```text
-Белая Тара
-├── статуи
-├── практика
-├── статьи
-└── видео
-```
-
-```text
-Миларепа
-├── Лапчи
-├── туры
-├── книги
-└── практики
-```
-
-## Milestone 4 — Recommendation Engine
-
-Поддержать запросы:
-
-- «Что подарить буддисту?»;
-- «Что поставить на домашний алтарь?»;
-- «Что подходит для ежедневной практики?»;
-- «Какой тур выбрать новичку?».
-
-## Milestone 5 — Admin Dashboard
-
-Адрес:
-
-```text
-http://127.0.0.1:8000/admin
-```
-
-Функции:
-
-- состояние каталога;
-- последняя синхронизация;
-- количество неизвестных типов;
-- запуск синхронизации;
-- перестроение индекса;
-- запуск benchmark;
-- открытие HTML-отчёта.
-
-## Milestone 6 — Production Deployment
-
-Требования:
-
-- HTTPS;
-- ограниченный CORS;
-- публичный backend;
-- автоматический запуск;
-- ежедневная синхронизация;
-- журнал ошибок;
-- резервное копирование SQLite;
-- мониторинг доступности.
-
-## Целевые метрики
-
-| Метрика | Цель |
-|---|---:|
-| Полнота импорта товаров | 100% |
-| Ошибки синхронизации | 0 |
-| Успешные ключевые запросы | ≥ 90% |
-| Неизвестные типы товаров | < 5 |
-| Время ответа API | < 2 сек |
-| Случайные подмены товара | 0 |
+1. Registry Adapter — resolve aliases to graph entity IDs.
+2. Product Graph Adapter — connect products to entities.
+3. Tour Graph Adapter — connect tours to entities and places.
+4. Answer Engine 2.0 — answer directly from graph traversal.
+5. Recommendation Engine 1.0.
+6. Advisor Engine 1.0.

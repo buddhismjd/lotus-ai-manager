@@ -1,0 +1,14 @@
+{
+  "id": "nepal",
+  "type": "country",
+  "name": "Непал",
+  "aliases": [
+    "Непале",
+    "Nepal"
+  ],
+  "description": "Страна в Гималаях.",
+  "keywords": [
+    "Гималаи",
+    "Лапчи"
+  ]
+}
