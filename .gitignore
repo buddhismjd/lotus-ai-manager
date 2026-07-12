@@ -1,32 +1,41 @@
+﻿# Python environment and caches
 .venv/
 __pycache__/
+**/__pycache__/
 *.py[cod]
+.pytest_cache/
+
+# Local environment and editor files
 .env
 .continue/
+.vscode/
+
+# Runtime logs
+logs/
+
+# Local runtime data
 data/knowledge.json
 data/dialogs.jsonl
-logs/
-.vscode/
-.pytest_cache/
 data/*.db
 data/*.db-shm
 data/*.db-wal
-.env
+
+# Generated diagnostics and reports
+data/*.csv
+data/*.html
+
 # Generated and temporary files
 _backup_*/
 apply_*.py
+*.bak
+
+# Root-level temporary knowledge exports
 knowledge/
+
+# The application knowledge package must remain trackable
 !backend/knowledge/
-!backend/knowledge/**
+!backend/knowledge/**/*.py
+!backend/knowledge/**/*.json
+
+# Local test launchers
 test_*.bat
-
-# Local installers and backups
-_backup_*/
-apply_*.py
-*.bak
-
-# Local installers and backups
-_backup_*/
-apply_*.py
-*.bak
-.continue/
