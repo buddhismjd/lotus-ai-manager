@@ -17,7 +17,7 @@ def test_profile_search_text_contains_structured_fields() -> None:
     text = profile.to_search_text()
 
     assert "Тип товара: statue" in text
-    assert "Основная сущность: Белая Тара" in text
+    assert "Основной аспект: Белая Тара" in text
     assert "Материалы: латунь" in text
     assert "Назначение: home_altar" in text
     assert "Традиции: Ваджраяна" in text

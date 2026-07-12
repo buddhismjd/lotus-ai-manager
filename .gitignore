@@ -1,41 +1,52 @@
-﻿# Python environment and caches
+# Python virtual environments
 .venv/
+venv/
+
+# Python generated files
 __pycache__/
-**/__pycache__/
 *.py[cod]
+*$py.class
+
+# Test and coverage artifacts
 .pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
 
 # Local environment and editor files
 .env
+.env.local
 .continue/
 .vscode/
 
-# Runtime logs
+# Runtime logs and generated application data
 logs/
-
-# Local runtime data
-data/knowledge.json
-data/dialogs.jsonl
-data/*.db
-data/*.db-shm
-data/*.db-wal
-
-# Generated diagnostics and reports
-data/*.csv
-data/*.html
-
-# Generated and temporary files
-_backup_*/
-apply_*.py
-*.bak
-
-# Root-level temporary knowledge exports
+data/
 knowledge/
 
-# The application knowledge package must remain trackable
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Local backups and migration artifacts
+_backup*/
+backup*/
+archive*/
+*.bak
+
+# Local ad-hoc test launchers
+test_*.bat
+
+# Temporary patch and delivery artifacts
+apply_*.py
+*.patch.txt
+*.zip
+
+# Accidental shell-output files
+tatus --short
+
+# The application knowledge package remains trackable
 !backend/knowledge/
 !backend/knowledge/**/*.py
 !backend/knowledge/**/*.json
-
-# Local test launchers
-test_*.bat
