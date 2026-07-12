@@ -1,149 +1,43 @@
-# AI Bodhi — Database
+# Database
 
-## Хранилище
+## Storage
 
-Основное локальное хранилище — SQLite.
+The project uses SQLite for local development.
 
-Ожидаемый путь:
-
-```text
-data/lotus_ai.db
-```
-
-Файл базы данных не должен добавляться в Git.
-
-## Основные таблицы
-
-### documents
-
-Универсальные документы из сайта и интеграций.
-
-Примерные поля:
-
-- `id`
-- `source_type`
-- `type`
-- `title`
-- `url`
-- `summary`
-- `content`
-- `enabled`
-- `priority`
-- `content_hash`
-- timestamps
-
-### document_chunks
-
-Фрагменты документов для поиска.
-
-Связь:
+Known tables from the project foundation include:
 
 ```text
-documents 1 → N document_chunks
+dialogs
+messages
+leads
+documents
+document_chunks
+settings
 ```
 
-### product_profiles
+Additional catalog/profile tables may exist in the current branch and
+must be verified directly from migrations and repository code.
 
-Структурированные товарные профили.
+## Ownership
 
-Поля:
+Repositories own database access.
 
-- `product_id`
-- `product_type`
-- `primary_entity`
-- `entities_json`
-- `materials_json`
-- `usages_json`
-- `traditions_json`
-- `synonyms_json`
-- `keywords_json`
-- `source_hash`
-- `created_at`
-- `updated_at`
+Answer builders and semantic modules must not issue ad-hoc SQL.
 
-### products
+## Migration rules
 
-Структурированная модель товара, используемая `ProductRepository`.
+- migrations must be idempotent;
+- existing data must remain readable;
+- destructive migrations require backup instructions;
+- schema changes require tests;
+- local database files must not be committed.
 
-Типичные поля:
+## Diagnostics
 
-- title;
-- description;
-- category;
-- material;
-- keywords;
-- price;
-- currency;
-- URL;
-- source ID.
-
-### tours
-
-Структурированная модель тура.
-
-Типичные поля:
-
-- title;
-- country;
-- region;
-- description;
-- difficulty;
-- guide;
-- keywords;
-- URL.
-
-### dialogs / messages / leads
-
-Используются для диалогов и лидов:
-
-- `dialogs` — сессии;
-- `messages` — сообщения;
-- `leads` — контакты и квалификация;
-- `settings` — настройки системы.
-
-## Правила данных
-
-1. Tilda UID должен использоваться как стабильный идентификатор товара.
-2. Повторная синхронизация должна выполнять upsert.
-3. Дубли по одному UID недопустимы.
-4. JSON-поля должны хранить списки, а не строки с разделителями.
-5. `source_hash` используется для обнаружения изменений.
-6. Удаление товара из Tilda не должно автоматически удалять историю без отдельного правила.
-7. Пустой короткий текст должен сохраняться хотя бы одним chunk.
-
-## Проверки
-
-Статистика профилей:
+Before changing schema, inspect:
 
 ```cmd
-python -c "from backend.catalog.product_profiles import get_profile_stats; print(get_profile_stats())"
+python -m backend.storage.database
 ```
 
-Профиль конкретного товара:
-
-```cmd
-python -c "from backend.catalog.product_profiles import get_product_profile; print(get_product_profile('product-384940676312'))"
-```
-
-Количество товаров:
-
-```cmd
-python -c "from backend.catalog.repositories import ProductRepository; print(len(ProductRepository().list_all()))"
-```
-
-## Миграции
-
-Пока проект локальный, допустимы идемпотентные `CREATE TABLE IF NOT EXISTS`.
-
-Перед production-релизом рекомендуется выделить версионированные миграции:
-
-```text
-backend/storage/migrations/
-```
-
-Каждая миграция должна:
-
-- иметь номер;
-- быть повторно безопасной;
-- создавать резервную копию перед изменением;
-- проходить тест на чистой и существующей базе.
+and the current migration/profile tests.

@@ -1,107 +1,44 @@
-# AI Bodhi — API
+# API
 
-## Base URL
+## FastAPI application
 
-Локально:
+The project exposes its public API through FastAPI.
 
-```text
-http://127.0.0.1:8000
-```
+The exact route set must be verified against the current branch before
+changing this document.
 
-## Chat API
+## Expected public concerns
 
-### POST /api/bodhi/chat
+- health/status endpoint;
+- chat/query endpoint;
+- admin interface;
+- website synchronization actions;
+- lead/contact handling.
 
-Запрос:
+## API change rules
 
-```json
-{
-  "message": "Хочу статую Белой Тары"
-}
-```
+Any API change must include:
 
-Ответ:
+- request/response test;
+- backward compatibility note;
+- updated widget integration if required;
+- updated API documentation;
+- smoke test through the real service.
 
-```json
-{
-  "answer": "🌸 ...",
-  "status": "bodhi_product",
-  "kind": "product",
-  "title": "Статуя Белой Тары",
-  "url": "https://..."
-}
-```
-
-Пустой запрос:
-
-```json
-{
-  "answer": "Напишите вопрос.",
-  "status": "empty"
-}
-```
-
-## Старый Chat API
-
-### POST /api/chat
-
-Сохраняется для обратной совместимости.
-
-## CORS
-
-Локальная разработка:
-
-```python
-allow_origins=["*"]
-```
-
-Production:
-
-```python
-allow_origins=[
-    "https://svet-lotosa.tilda.ws",
-    "https://YOUR-DOMAIN",
-]
-```
-
-В production не следует использовать `allow_origins=["*"]`.
-
-## Проверка API
+## Verification commands
 
 ```cmd
-curl -X POST http://127.0.0.1:8000/api/bodhi/chat ^
--H "Content-Type: application/json" ^
--d "{\"message\":\"Хочу на Кайлас\"}"
+python -m pytest tests\test_bodhi_api.py
+python -m py_compile backend\main.py
 ```
 
-## Тесты
+## Do not expose
 
-```cmd
-python -m pytest tests	est_bodhi_api.py
-```
+Never return:
 
-## Формат ошибок
-
-API не должен отдавать пользователю traceback.
-
-Рекомендуемый формат:
-
-```json
-{
-  "answer": "Сейчас не удалось подготовить ответ.",
-  "status": "error",
-  "kind": "fallback"
-}
-```
-
-## Production requirements
-
-- HTTPS;
-- ограниченный CORS;
-- таймауты внешних запросов;
-- журналирование;
-- healthcheck;
-- ограничение размера запроса;
-- rate limiting;
-- скрытие внутренних исключений;
-- мониторинг ошибок.
+- internal IDs unless required;
+- filesystem paths;
+- stack traces;
+- credentials;
+- raw database errors;
+- private configuration.

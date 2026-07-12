@@ -1,14 +1,96 @@
-# AI Bodhi Platform Architecture
+# Architecture
 
-AI Bodhi is organized into independent layers:
+## Data flow
 
-1. Registry layer — resolves user wording to canonical IDs.
-2. Knowledge Graph — stores typed entities and relations.
-3. Product Intelligence — structures catalog products.
-4. Tour Intelligence — structures travel programs.
-5. Answer Engine — builds grounded responses.
-6. Recommendation Engine — suggests related objects.
-7. Advisor Engine — audits product and tour content.
+```text
+External source
+    │
+    ▼
+Integration
+    │
+    ▼
+Repository
+    │
+    ▼
+Structured profile
+    │
+    ▼
+Registry / Graph / Router
+    │
+    ▼
+Bodhi Orchestrator
+    │
+    ▼
+BuiltResponse
+    │
+    ▼
+FastAPI / Widget
+```
 
-The Knowledge Graph is additive and does not replace existing modules yet.
-Migration should happen in small, tested stages.
+## Layer responsibilities
+
+### Integration layer
+
+Reads external data and converts it into internal repository records.
+
+It must not contain final user-response logic.
+
+### Repository layer
+
+Stores and retrieves products, tours, messages, leads and settings.
+
+### Intelligence layer
+
+Converts raw records into structured profiles.
+
+Examples:
+
+- type;
+- aspect;
+- material;
+- use;
+- country;
+- destination;
+- practice;
+- duration;
+- altitude.
+
+### Registry layer
+
+Normalizes wording to canonical IDs.
+
+Example:
+
+```text
+Белой Таре
+→ white_tara
+→ Белая Тара
+```
+
+### Knowledge layer
+
+Stores stable facts and typed relations.
+
+### Runtime graph
+
+Combines stable graph data with current products and tours.
+
+### Routing layer
+
+Determines which business domain owns the question.
+
+### Semantic layer
+
+Handles unresolved knowledge-style questions only.
+
+### Orchestrator
+
+Preserves priority and prevents regressions.
+
+## Core invariant
+
+```text
+Product/Tour/Planned/Aspect/Legacy Knowledge
+before
+Semantic fallback
+```
