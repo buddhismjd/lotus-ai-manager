@@ -4,6 +4,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from backend.knowledge_graph.contract import GraphNeighborhood
+
 from backend.knowledge_graph.models import (
     KnowledgeEntity,
     KnowledgeRelation,
@@ -120,6 +122,64 @@ class KnowledgeGraphRepository:
 
         return tuple(
             sorted(result, key=lambda item: item.name.lower())
+        )
+
+    # Knowledge 2.0 contract API. Legacy methods remain available so the
+    # migration can be performed layer by layer without duplicated storage.
+    def get_aspect(self, aspect_id: str) -> KnowledgeEntity | None:
+        return self.get_entity(aspect_id)
+
+    def list_aspects(
+        self,
+        aspect_type=None,
+    ) -> tuple[KnowledgeEntity, ...]:
+        entities = self.list_entities()
+        if aspect_type is None:
+            return entities
+        return tuple(
+            aspect for aspect in entities
+            if aspect.entity_type is aspect_type
+        )
+
+    def find_aspects(
+        self,
+        value: str,
+        aspect_type=None,
+    ) -> tuple[KnowledgeEntity, ...]:
+        aspects = self.find_by_name(value)
+        if aspect_type is None:
+            return aspects
+        return tuple(
+            aspect for aspect in aspects
+            if aspect.entity_type is aspect_type
+        )
+
+    def outgoing_relations(
+        self,
+        aspect_id: str,
+        relation_type: RelationType | None = None,
+    ) -> tuple[KnowledgeRelation, ...]:
+        return self.outgoing(aspect_id, relation_type)
+
+    def incoming_relations(
+        self,
+        aspect_id: str,
+        relation_type: RelationType | None = None,
+    ) -> tuple[KnowledgeRelation, ...]:
+        return self.incoming(aspect_id, relation_type)
+
+    def neighborhood(
+        self,
+        aspect_id: str,
+    ) -> GraphNeighborhood | None:
+        aspect = self.get_aspect(aspect_id)
+        if aspect is None:
+            return None
+        return GraphNeighborhood(
+            aspect=aspect,
+            outgoing=self.outgoing_relations(aspect_id),
+            incoming=self.incoming_relations(aspect_id),
+            neighbors=self.neighbors(aspect_id),
         )
 
 

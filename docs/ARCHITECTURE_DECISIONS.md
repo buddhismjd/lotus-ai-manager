@@ -32,3 +32,11 @@ Tests document domain rules; code must remain general.
 ## ADR-008 — Small architecture stages
 
 Each stage requires architecture, code, tests, diagnostics, smoke and Git.
+
+## ADR-005: Additive Knowledge Graph Contract
+
+Knowledge 2.0 introduces `KnowledgeGraphContract` as a read-only protocol and
+uses aspect-oriented domain aliases over the existing persisted graph models.
+The repository implements both legacy and Knowledge 2.0 methods against one
+storage collection. This avoids a flag-day migration and prevents duplicated
+graph state.
