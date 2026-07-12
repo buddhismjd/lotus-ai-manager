@@ -12,6 +12,9 @@ from backend.rag.dynamic_query_router import (
     detect_product_kind,
     route_query,
 )
+from backend.knowledge.answering import answer_knowledge_query
+from backend.tours.planned import find_planned_tour
+from backend.services.semantic_service_adapter import semantic_built_response
 from backend.services.response_builder import (
     BuiltResponse,
     build_aspect_response,
@@ -112,13 +115,67 @@ def _aspect_grouped_products(aspect: str):
     )
 
 
-def answer_query(query: str) -> BuiltResponse:
+
+def _planned_tour_response(query: str) -> BuiltResponse | None:
+    planned = find_planned_tour(query)
+
+    if planned is None:
+        return None
+
+    details = [
+        f"🌸 **{planned.title}**",
+        planned.note,
+    ]
+
+    if planned.destinations:
+        details.append(
+            "Направление: " + ", ".join(planned.destinations)
+        )
+    if planned.aspects:
+        details.append(
+            "Аспект: " + ", ".join(planned.aspects)
+        )
+    if planned.practices:
+        details.append(
+            "Формат: " + ", ".join(planned.practices)
+        )
+
+    details.append(
+        "Если Вам интересно это направление, "
+        "я могу передать Ваш интерес менеджеру, "
+        "чтобы сообщить после публикации дат."
+    )
+
+    return BuiltResponse(
+        kind="tour",
+        text="\n\n".join(details),
+        title=planned.title,
+        url=None,
+    )
+
+def _answer_query_legacy(query: str) -> BuiltResponse:
     """
     Route the query and build a user-facing answer.
 
-    General aspect questions are grouped by product form.
-    Specific product questions keep the single best match.
+    Knowledge-graph questions are handled first. General aspect questions
+    are grouped by product form. Specific product questions keep the
+    single best match.
     """
+    knowledge_answer = answer_knowledge_query(query)
+
+    if knowledge_answer.matched:
+        return BuiltResponse(
+            kind="product",
+            text=knowledge_answer.text,
+            title=knowledge_answer.title,
+            url=None,
+        )
+
+    planned_response = _planned_tour_response(query)
+
+    if planned_response is not None:
+        return planned_response
+
     aspect = _general_aspect_from_query(query)
 
     if aspect:
@@ -196,3 +253,18 @@ def answer_query(query: str) -> BuiltResponse:
 
 
 __all__ = ["answer_query"]
+
+def answer_query(query: str) -> BuiltResponse:
+    """Run established business handlers before semantic fallback."""
+    legacy_response = _answer_query_legacy(query)
+
+    if legacy_response.kind != "fallback":
+        return legacy_response
+
+    semantic_response = semantic_built_response(query)
+
+    if semantic_response is not None:
+        return semantic_response
+
+    return legacy_response
+
