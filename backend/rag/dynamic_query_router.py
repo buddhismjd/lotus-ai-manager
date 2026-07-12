@@ -282,6 +282,14 @@ TOUR_CONTEXT_PREFIXES = (
     "паломнич",
     "маршрут",
     "поход",
+    "съезд",
+    "ехать",
+    "поех",
+    "возит",
+    "везет",
+    "везёт",
+    "кора",
+    "кору",
 )
 
 PRODUCT_CONTEXT_PREFIXES = tuple(
@@ -923,6 +931,19 @@ def route_query(text: str) -> Route:
             "tour",
             0.88,
             "generic_tour_request",
+        )
+
+    # When the user names a destination without an explicit product form,
+    # route to tours before comparing shared geographic words in products.
+    # This preserves the product route for queries such as
+    # «чётки из Тибета», where product_context is explicit.
+    if not product_context and tour and tour_score >= 20:
+        return Route(
+            "tour",
+            min(0.99, 0.65 + tour_score / 200),
+            "destination_tour_match",
+            tour["title"],
+            tour["url"],
         )
 
     if product_context:
