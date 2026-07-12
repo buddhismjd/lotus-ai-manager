@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import html
-import json
 import re
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Iterator
 from urllib.request import Request, urlopen
 
 
@@ -33,30 +32,8 @@ class StorePart:
 
 
 _GET_PRODUCTS_URL_RE = re.compile(
-    r"getproductslist/\?[^\"'<>\\s]+",
+    r"getproductslist/\?[^\"'<>\s]+",
     re.IGNORECASE,
-)
-
-_PAIR_PATTERNS = (
-    re.compile(
-        r"storepartuid[\"']?\s*[:=]\s*[\"']?(?P<part>\d+)"
-        r".{0,800}?"
-        r"recid[\"']?\s*[:=]\s*[\"']?(?P<recid>\d+)",
-        re.IGNORECASE | re.DOTALL,
-    ),
-    re.compile(
-        r"recid[\"']?\s*[:=]\s*[\"']?(?P<recid>\d+)"
-        r".{0,800}?"
-        r"storepartuid[\"']?\s*[:=]\s*[\"']?(?P<part>\d+)",
-        re.IGNORECASE | re.DOTALL,
-    ),
-    re.compile(
-        r"data-storepartuid=[\"'](?P<part>\d+)[\"']"
-        r".{0,800}?"
-        r"(?:id=[\"']rec|data-record-type=[\"'])?"
-        r"(?P<recid>\d{6,})",
-        re.IGNORECASE | re.DOTALL,
-    ),
 )
 
 _PART_ONLY_RE = re.compile(
@@ -70,6 +47,14 @@ _RECID_RE = re.compile(
     r"[\"']?\s*[:=]\s*[\"']?(?P<recid>\d+)",
     re.IGNORECASE,
 )
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>", re.DOTALL)
+
+_SOURCE_PRIORITY = {
+    "getproductslist_url": 30,
+    "inline_config": 20,
+    "proximity": 10,
+}
 
 
 def fetch_shop_html(
@@ -98,38 +83,119 @@ def _query_value(url: str, key: str) -> str | None:
 
 
 def _add_part(
-    result: dict[tuple[str, str], StorePart],
+    result: dict[str, StorePart],
     storepartuid: str | None,
     recid: str | None,
     source: str,
 ) -> None:
+    """
+    Register one Tilda store block using deterministic source precedence.
+
+    ``storepartuid`` is the stable block identifier. A lower-confidence
+    source cannot duplicate or replace a block already resolved from a more
+    structured source.
+    """
     if not storepartuid or not recid:
         return
 
     if not storepartuid.isdigit() or not recid.isdigit():
         return
 
-    key = (storepartuid, recid)
-    result.setdefault(
-        key,
-        StorePart(
-            storepartuid=storepartuid,
-            recid=recid,
-            source=source,
-        ),
+    candidate = StorePart(
+        storepartuid=storepartuid,
+        recid=recid,
+        source=source,
     )
+    current = result.get(storepartuid)
+
+    if current is None:
+        result[storepartuid] = candidate
+        return
+
+    if _SOURCE_PRIORITY.get(source, 0) > _SOURCE_PRIORITY.get(
+        current.source,
+        0,
+    ):
+        result[storepartuid] = candidate
+
+
+def _iter_balanced_object_blocks(text: str) -> Iterator[str]:
+    """
+    Yield balanced JavaScript/JSON object blocks.
+
+    Pair extraction is bounded by object braces. This prevents a ``recid``
+    from one object being associated with ``storepartuid`` from the next.
+    """
+    stack: list[int] = []
+    quote: str | None = None
+    escaped = False
+
+    for index, character in enumerate(text):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+
+        if character in {'"', "'", "`"}:
+            quote = character
+            continue
+
+        if character == "{":
+            stack.append(index)
+            continue
+
+        if character == "}" and stack:
+            start = stack.pop()
+            yield text[start:index + 1]
+
+
+def _extract_single_pair(segment: str) -> tuple[str, str] | None:
+    """
+    Extract one unambiguous pair from a bounded segment.
+
+    Segments containing multiple distinct values are rejected instead of
+    guessed. Nested object blocks are processed independently.
+    """
+    parts = {match.group("part") for match in _PART_ONLY_RE.finditer(segment)}
+    recids = {match.group("recid") for match in _RECID_RE.finditer(segment)}
+
+    if len(parts) != 1 or len(recids) != 1:
+        return None
+
+    return next(iter(parts)), next(iter(recids))
+
+
+def _iter_structured_pairs(text: str) -> Iterator[tuple[str, str]]:
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for block in _iter_balanced_object_blocks(text):
+        pair = _extract_single_pair(block)
+        if pair is not None and pair not in seen_pairs:
+            seen_pairs.add(pair)
+            yield pair
+
+    for tag_match in _HTML_TAG_RE.finditer(text):
+        pair = _extract_single_pair(tag_match.group(0))
+        if pair is not None and pair not in seen_pairs:
+            seen_pairs.add(pair)
+            yield pair
 
 
 def discover_store_parts_from_html(raw_html: str) -> list[StorePart]:
     """
-    Discover all Tilda store blocks from the published page source.
+    Discover all Tilda store blocks from published page source.
 
-    Tilda may represent the same values in request URLs, inline JSON,
-    escaped JavaScript or data attributes, so several extraction strategies
-    are deliberately used.
+    Extraction order:
+    1. Tilda ``getproductslist`` request URLs.
+    2. Bounded JavaScript/JSON objects and individual HTML tags.
+    3. Proximity matching only for still-unresolved store blocks.
     """
     text = html.unescape(raw_html)
-    result: dict[tuple[str, str], StorePart] = {}
+    result: dict[str, StorePart] = {}
 
     for match in _GET_PRODUCTS_URL_RE.finditer(text):
         url = match.group(0)
@@ -140,22 +206,25 @@ def discover_store_parts_from_html(raw_html: str) -> list[StorePart]:
             "getproductslist_url",
         )
 
-    for pattern in _PAIR_PATTERNS:
-        for match in pattern.finditer(text):
-            _add_part(
-                result,
-                match.group("part"),
-                match.group("recid"),
-                "inline_config",
-            )
+    for storepartuid, recid in _iter_structured_pairs(text):
+        _add_part(
+            result,
+            storepartuid,
+            recid,
+            "inline_config",
+        )
 
-    # Last-resort proximity matching: associate each storepartuid with the
-    # nearest recid within the surrounding catalog block.
+    # Last-resort fallback for markup where no bounded structured pair can
+    # be recovered. Already resolved store blocks are deliberately skipped.
     for part_match in _PART_ONLY_RE.finditer(text):
+        part = part_match.group("part")
+
+        if part in result:
+            continue
+
         start = max(0, part_match.start() - 1200)
         end = min(len(text), part_match.end() + 1200)
         window = text[start:end]
-
         recids = list(_RECID_RE.finditer(window))
 
         if not recids:
@@ -170,7 +239,7 @@ def discover_store_parts_from_html(raw_html: str) -> list[StorePart]:
         )
         _add_part(
             result,
-            part_match.group("part"),
+            part,
             nearest.group("recid"),
             "proximity",
         )
