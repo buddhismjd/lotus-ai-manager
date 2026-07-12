@@ -9,6 +9,7 @@ from backend.knowledge.graph import (
     aspect_overview,
     build_knowledge_graph,
 )
+from backend.knowledge.aspect_registry import canonical_aspect_name
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +107,18 @@ def _find_node(
 
     if exact:
         return exact[0]
+
+    if node_type == "aspect":
+        canonical_name = canonical_aspect_name(label)
+
+        if canonical_name:
+            canonical = graph.find(
+                canonical_name,
+                node_type=node_type,
+            )
+
+            if canonical:
+                return canonical[0]
 
     for node in graph.nodes.values():
         if node.node_type != node_type:
