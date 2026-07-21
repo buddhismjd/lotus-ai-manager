@@ -7,6 +7,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from backend.config import AI_PROVIDER, EMAIL_TO, OLLAMA_MODEL, SITE_URL
 from backend.services.ai_service import chat
+from backend.rag.dynamic_query_router import route_query
+from backend.catalog.collection_builder import build_product_collection
+from backend.tours.collection_builder import build_tour_collection, detect_country
 from backend.services.bodhi_service import answer_query
 from backend.services.dashboard_service import get_dashboard_data
 from backend.services.knowledge_service import load_knowledge, rebuild_knowledge, search_knowledge
@@ -25,7 +28,7 @@ app.add_middleware(
 
 STYLE = """
 <style>
-body{font-family:Arial,sans-serif;background:#f7f3ff;color:#2d2440;margin:0;padding:30px 18px}.container{max-width:1080px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}.card{background:#fff;border:1px solid #e7def8;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 7px 25px rgba(70,42,120,.06)}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}.stat{background:#faf8ff;border:1px solid #e7def8;border-radius:14px;padding:16px}.num{font-size:28px;font-weight:bold;color:#6847d9}.button{display:inline-block;padding:11px 16px;border-radius:11px;background:#6847d9;color:#fff;text-decoration:none;border:0;cursor:pointer}.secondary{background:#ede7ff;color:#4b358d}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #eee8f8;vertical-align:top}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee8ff;color:#503b9d;font-size:12px;font-weight:bold}input{width:72%;padding:12px;border:1px solid #d8cdec;border-radius:10px;font-size:15px}.muted{color:#786f88}.chat{min-height:360px;border:1px solid #eee8f8;border-radius:16px;padding:16px;overflow:auto}.msg{white-space:pre-wrap;padding:12px 14px;border-radius:14px;margin:10px 0;line-height:1.45}.user{background:#eee8ff;margin-left:80px}.bot{background:#f5f3f7;margin-right:80px}.row{display:flex;gap:10px;margin-top:14px}.row input{flex:1;width:auto}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 80px 14px 0}.suggestion{padding:8px 12px;border:1px solid #cfc0f1;border-radius:999px;background:#fff;color:#5639a8;cursor:pointer;font-size:13px}.suggestion:hover{background:#eee8ff}
+body{font-family:Arial,sans-serif;background:#f7f3ff;color:#2d2440;margin:0;padding:30px 18px}.container{max-width:1080px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}.card{background:#fff;border:1px solid #e7def8;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 7px 25px rgba(70,42,120,.06)}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}.stat{background:#faf8ff;border:1px solid #e7def8;border-radius:14px;padding:16px}.num{font-size:28px;font-weight:bold;color:#6847d9}.button{display:inline-block;padding:11px 16px;border-radius:11px;background:#6847d9;color:#fff;text-decoration:none;border:0;cursor:pointer}.secondary{background:#ede7ff;color:#4b358d}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #eee8f8;vertical-align:top}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee8ff;color:#503b9d;font-size:12px;font-weight:bold}input{width:72%;padding:12px;border:1px solid #d8cdec;border-radius:10px;font-size:15px}.muted{color:#786f88}.chat{min-height:360px;border:1px solid #eee8f8;border-radius:16px;padding:16px;overflow:auto}.msg{white-space:pre-wrap;padding:12px 14px;border-radius:14px;margin:10px 0;line-height:1.45}.user{background:#eee8ff;margin-left:80px}.bot{background:#f5f3f7;margin-right:80px}.row{display:flex;gap:10px;margin-top:14px}.row input{flex:1;width:auto}.suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 80px 14px 0}.suggestion{padding:8px 12px;border:1px solid #cfc0f1;border-radius:999px;background:#fff;color:#5639a8;cursor:pointer;font-size:13px}.suggestion:hover{background:#eee8ff}.collection{display:grid;gap:12px;margin:8px 80px 16px 0}.item-card{overflow:hidden;background:#fff;border:1px solid #e7def8;border-radius:15px}.item-card img{display:block;width:100%;max-height:260px;object-fit:cover;background:#f4effa}.item-body{padding:13px}.item-title{font-weight:700;margin-bottom:7px}.item-meta{font-size:13px;color:#786f88;margin-top:4px}.item-link{display:inline-block;margin-top:10px;padding:9px 12px;border-radius:9px;background:#6847d9;color:#fff;text-decoration:none;font-size:13px;font-weight:700}
 </style>
 """
 
@@ -127,14 +130,42 @@ async def api_bodhi_chat(payload: dict) -> JSONResponse:
         )
 
     response = answer_query(message)
+    items: list[dict] = []
+    kind = response.kind
+    answer = response.text
+
+    try:
+        route = route_query(message)
+        if route.intent == "product":
+            items = [item.to_dict() for item in build_product_collection(message)]
+            if items:
+                count = len(items)
+                answer = f"Нашла {count} подходящих " + ("товар." if count == 1 else "товара." if count < 5 else "товаров.")
+                kind = "product_collection"
+        elif route.intent == "tour" and detect_country(message):
+            items = [item.to_dict() for item in build_tour_collection(message)]
+            if items:
+                country = detect_country(message)
+                planned_only = all(item.get("status") == "planned" for item in items)
+                answer = (
+                    f"По направлению «{country}» опубликованных программ пока нет, но готовится следующее путешествие:"
+                    if planned_only else
+                    f"Нашла путешествия по направлению «{country}»:"
+                )
+                kind = "tour_collection"
+    except Exception:
+        # The established answer remains available while catalog storage is
+        # being initialized or during isolated API tests.
+        items = []
 
     return JSONResponse(
         {
-            "answer": response.text,
-            "status": f"bodhi_{response.kind}",
-            "kind": response.kind,
+            "answer": answer,
+            "status": f"bodhi_{kind}",
+            "kind": kind,
             "title": response.title,
             "url": response.url,
+            "items": items,
         }
     )
 
@@ -145,8 +176,9 @@ def chat_ui() -> str:
     <div class='top'><div><h1>AI-менеджер «Свет Лотоса»</h1><div class='muted'>Локальный тестовый чат</div></div><a class='button secondary' href='/admin'>Админка</a></div>
     <div class='card'><div id='messages' class='chat'><div class='msg bot'>Здравствуйте! Я AI-менеджер студии «Свет Лотоса». Спросите меня о турах, товарах или консультации буддолога-психолога.</div></div><div class='row'><input id='message' placeholder='Например: Есть тур на Кайлас?' onkeydown="if(event.key==='Enter')sendMessage()"><button class='button' onclick='sendMessage()'>Отправить</button></div></div>
     <script>
-    async function sendMessage(value){const input=document.getElementById('message');const text=(value||input.value).trim();if(!text)return;clearSuggestions();addMessage(text,'user');input.value='';addMessage('Думаю...','bot');try{const r=await fetch('/api/sales/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,session_id:'local-chat-ui'})});const d=await r.json();const m=document.getElementById('messages');m.lastChild.textContent=d.answer;showSuggestions(d.suggestions||[]);m.scrollTop=m.scrollHeight}catch(e){document.getElementById('messages').lastChild.textContent='Не удалось получить ответ. Проверьте сервер.'}}
+    async function sendMessage(value){const input=document.getElementById('message');const text=(value||input.value).trim();if(!text)return;clearSuggestions();addMessage(text,'user');input.value='';addMessage('Думаю...','bot');try{const r=await fetch('/api/sales/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,session_id:'local-chat-ui'})});const d=await r.json();const m=document.getElementById('messages');m.lastChild.textContent=d.answer;showItems(d.items||[]);showSuggestions(d.suggestions||[]);m.scrollTop=m.scrollHeight}catch(e){document.getElementById('messages').lastChild.textContent='Не удалось получить ответ. Проверьте сервер.'}}
     function addMessage(text,cls){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
+    function showItems(items){if(!items.length)return;const m=document.getElementById('messages');const collection=document.createElement('div');collection.className='collection';items.forEach(item=>{const card=document.createElement('article');card.className='item-card';if(item.image_url){const img=document.createElement('img');img.src=item.image_url;img.alt=item.title||'Товар';img.loading='lazy';card.appendChild(img)}const body=document.createElement('div');body.className='item-body';const title=document.createElement('div');title.className='item-title';title.textContent=item.title||'Без названия';body.appendChild(title);[item.price,item.size,item.material,item.availability].filter(Boolean).forEach(value=>{const meta=document.createElement('div');meta.className='item-meta';meta.textContent=value;body.appendChild(meta)});if(item.url){const link=document.createElement('a');link.className='item-link';link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=item.status==='planned'?'Подробнее':'Открыть товар';body.appendChild(link)}card.appendChild(body);collection.appendChild(card)});m.appendChild(collection)}
     function clearSuggestions(){document.querySelectorAll('.suggestions').forEach(x=>x.remove())}
     function showSuggestions(items){if(!items.length)return;const m=document.getElementById('messages');const box=document.createElement('div');box.className='suggestions';items.forEach(item=>{const b=document.createElement('button');b.className='suggestion';b.textContent=item.label;b.onclick=()=>sendMessage(item.message);box.appendChild(b)});m.appendChild(box)}
     </script>

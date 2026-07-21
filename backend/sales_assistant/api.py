@@ -33,6 +33,7 @@ async def sales_chat(payload: dict) -> JSONResponse:
         "dialogue_stage": reply.dialogue_stage,
         "lead_id": reply.lead_id,
         "session_id": session_id,
+        "items": list(reply.items),
     })
 
 

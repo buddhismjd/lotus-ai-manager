@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
+from backend.catalog.collection_builder import build_product_collection
+from backend.tours.collection_builder import build_tour_collection, detect_country
 from backend.sales_assistant.dialogue import (
     DialogueSuggestion,
     NextActionType,
@@ -33,6 +35,7 @@ class SalesReply:
     suggestions: tuple[DialogueSuggestion, ...] = ()
     dialogue_stage: str = DialogueStage.DISCOVERY.value
     lead_id: int | None = None
+    items: tuple[dict, ...] = ()
 
 
 class SalesAssistant:
@@ -76,6 +79,58 @@ class SalesAssistant:
             topic = self._state_topic(state)
 
         decision = choose_strategy(query, topic)
+
+        if topic == "product":
+            product_items = build_product_collection(query)
+            if product_items:
+                state.last_query = query
+                state.topic = "product"
+                answer = (
+                    f"Нашла {len(product_items)} подходящих "
+                    + ("товар." if len(product_items) == 1 else "товара." if len(product_items) < 5 else "товаров.")
+                    + " Все варианты представлены ниже."
+                )
+                return self._with_dialogue(
+                    SalesReply(
+                        answer=answer,
+                        kind="product_collection",
+                        topic="product",
+                        items=tuple(item.to_dict() for item in product_items),
+                    ),
+                    decision.strategy,
+                )
+
+        if topic == "tour" and detect_country(query):
+            tour_items = build_tour_collection(query)
+            country = detect_country(query)
+            state.last_query = query
+            state.topic = "tour"
+            if tour_items:
+                planned_only = all(item.status == "planned" for item in tour_items)
+                answer = (
+                    f"По направлению «{country}» опубликованных программ пока нет, "
+                    "но готовится следующее путешествие:"
+                    if planned_only else
+                    f"Нашла путешествия по направлению «{country}»:"
+                )
+                return self._with_dialogue(
+                    SalesReply(
+                        answer=answer,
+                        kind="tour_collection",
+                        topic="tour",
+                        items=tuple(item.to_dict() for item in tour_items),
+                        needs_manager=planned_only,
+                    ),
+                    decision.strategy,
+                )
+            return self._with_dialogue(
+                SalesReply(
+                    answer=f"Сейчас я не нашла опубликованных или планируемых путешествий по направлению «{country}».",
+                    kind="tour_collection",
+                    topic="tour",
+                ),
+                decision.strategy,
+            )
 
         if self._asks_for_tour_selection(query) and state.candidate_tour_ids:
             state.last_query = query
@@ -441,6 +496,7 @@ class SalesAssistant:
             needs_manager=plan.requires_manager,
             next_action=plan.next_action,
             suggestions=plan.suggestions,
+            items=reply.items,
         )
 
     def _candidate_tours(self, state: DialogueState) -> list[StructuredTour]:
