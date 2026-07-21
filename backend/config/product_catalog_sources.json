@@ -1,0 +1,11 @@
+{
+  "sources": [
+    {"name":"Все товары","category":null,"url":"https://svet-lotosa.tilda.ws/svet-lotosa-shop","required":true,"fallback_store_parts":[{"storepartuid":"979629845002","recid":"2234421481"}]},
+    {"name":"Статуи","category":"Статуи","url":"https://svet-lotosa.tilda.ws/statui-svet-lotosa","required":true},
+    {"name":"Подвески","category":"Подвески","url":"https://svet-lotosa.tilda.ws/podveski-svet-lotosa","required":true},
+    {"name":"Серьги","category":"Серьги","url":"https://svet-lotosa.tilda.ws/sergi-svet-lotosa","required":true},
+    {"name":"Малы (чётки)","category":"Малы (чётки)","url":"https://svet-lotosa.tilda.ws/chetki-svet-lotosa","required":true},
+    {"name":"Гау","category":"Гау","url":"https://svet-lotosa.tilda.ws/gau-svet-lotosa","required":true},
+    {"name":"Благовония","category":"Благовония","url":"https://svet-lotosa.tilda.ws/blago-svet-lotosa","required":true}
+  ]
+}

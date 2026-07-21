@@ -19,6 +19,16 @@ class StructuredTourRepository:
         ]
         return sorted(tours, key=self._sort_key)
 
+    def list_scheduled(self) -> list[StructuredTour]:
+        """Return every published tour that has real schedule data."""
+        return [tour for tour in self.list_all() if tour.schedule is not None]
+
+    def search(self, query: str) -> list[StructuredTour]:
+        """Natural-query discovery without imposed questionnaire filters."""
+        from backend.sales_assistant.tour_discovery import filter_tours_for_query
+
+        return filter_tours_for_query(self.list_all(), query)
+
     def list_by_month(self, month: int) -> list[StructuredTour]:
         if not 1 <= month <= 12:
             raise ValueError("month must be between 1 and 12")

@@ -37,6 +37,8 @@ def _profile_id(product: Product) -> str | None:
 
 
 def _image_url(product: Product) -> str | None:
+    if product.image_url:
+        return product.image_url
     explicit = product.metadata.get("image_url") if product.metadata else None
     if explicit:
         return str(explicit)
@@ -112,7 +114,10 @@ def build_product_collection(query: str, products: Iterable[Product] | None = No
             url=product.url or None,
             image_url=_image_url(product),
             price=_price(product.price, product.currency),
-            availability="В наличии" if product.available else "Под заказ / наличие уточняется",
+            availability=(
+                product.availability_status
+                or ("В наличии" if product.available else "Под заказ / наличие уточняется")
+            ),
             material=product.material,
             size=_size(product),
         ))

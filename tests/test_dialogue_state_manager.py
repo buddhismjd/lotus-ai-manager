@@ -26,7 +26,9 @@ def test_tour_list_is_remembered_for_follow_up_selection() -> None:
     assert second.kind == "tour_selection"
     assert "Долина Маркха" in second.answer
     assert "Кайлас" in second.answer
-    assert "Что для Вас важнее" in second.answer
+    assert "Выберите путешествие" in second.answer
+    assert "треккинг" not in second.answer.casefold()
+    assert "сложност" not in second.answer.casefold()
     assert len(second.suggestions) >= 2
 
 

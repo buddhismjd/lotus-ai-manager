@@ -153,7 +153,7 @@ def _format_tour(response: BuiltResponse) -> BuiltResponse:
     summary = _short_summary(lines, title=title)
     url = response.url or (tour.url if tour else None)
 
-    blocks = ["Да, мы организуем это путешествие.", f"🗻 {title}"]
+    blocks = ["С радостью расскажу об этом путешествии.", f"🗻 {title}"]
     facts: list[str] = []
     if date_text:
         facts.append(f"📅 {date_text}")
@@ -169,10 +169,8 @@ def _format_tour(response: BuiltResponse) -> BuiltResponse:
         blocks.append("\n".join(facts))
     if summary:
         blocks.append(summary)
-    if url:
-        blocks.append(f"Подробнее о туре:\n{url}")
     blocks.append(
-        "Могу уточнить программу, стоимость, условия участия или помочь оставить заявку."
+        "Если этот путь откликается Вам, я могу уточнить программу, стоимость или помочь сохранить интерес к поездке."
     )
     return replace(response, text="\n\n".join(blocks), title=title, url=url)
 
@@ -187,7 +185,7 @@ def _format_product(response: BuiltResponse) -> BuiltResponse:
     summary = _short_summary(_source_lines(description), title=title, max_chars=260)
     url = response.url or (product.url if product else None)
 
-    blocks = ["Да, такой товар есть в каталоге.", f"🌸 {title}"]
+    blocks = ["С удовольствием покажу этот вариант.", f"🌸 {title}"]
     facts: list[str] = []
     if product:
         price = _money(product.price, product.currency)
@@ -200,9 +198,7 @@ def _format_product(response: BuiltResponse) -> BuiltResponse:
         blocks.append("\n".join(facts))
     if summary:
         blocks.append(summary)
-    if url:
-        blocks.append(f"Подробнее о товаре:\n{url}")
-    blocks.append("Могу показать похожие варианты или помочь с выбором.")
+    blocks.append("Буду рада показать другие подходящие варианты или помочь с выбором.")
     return replace(response, text="\n\n".join(blocks), title=title, url=url)
 
 
@@ -233,17 +229,22 @@ _MONTH_NAMES = {
 }
 
 
-def format_tour_list(tours: Iterable[Tour], month: int | None = None, limit: int = 5) -> str:
-    selected = list(tours)[: max(1, limit)]
+def format_tour_list(
+    tours: Iterable[Tour],
+    month: int | None = None,
+    limit: int | None = None,
+) -> str:
+    all_tours = list(tours)
+    selected = all_tours if limit is None else all_tours[: max(1, limit)]
     if not selected:
         period = f" в {_MONTH_NAMES[month]}" if month in _MONTH_NAMES else ""
         return (
-            f"Сейчас я не нашёл опубликованных туров{period}. "
-            "Могу передать Ваш интерес менеджеру и уточнить готовящиеся программы."
+            f"К сожалению, я не нашёл опубликованных туров{period}. "
+            "При желании могу сохранить Ваш интерес и передать его менеджеру."
         )
 
     period = f" в {_MONTH_NAMES[month]}" if month in _MONTH_NAMES else ""
-    heading = f"Вот опубликованные туры{period}:"
+    heading = f"Вот опубликованные туры{period}. С радостью покажу каждый вариант:"
     cards: list[str] = []
 
     for tour in selected:
@@ -258,8 +259,6 @@ def format_tour_list(tours: Iterable[Tour], month: int | None = None, limit: int
             card.append(f"⏱ {duration} дней")
         if tour.country:
             card.append(f"📍 {tour.country}")
-        if tour.url:
-            card.append(tour.url)
         cards.append("\n".join(card))
 
     tail = "Могу подробнее рассказать о любом из этих путешествий или помочь выбрать подходящее."

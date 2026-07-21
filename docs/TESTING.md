@@ -40,16 +40,6 @@ python -m tools.tour_profile_report
 python -m tools.tour_data_diagnostics
 ```
 
-## Repository health
-
-```cmd
-python -m pytest tests\test_repository_health.py
-python -m tools.repository_health
-```
-
-The repository-health check prevents tracked caches, local databases, backup
-directories, and temporary patch scripts from returning to Git history.
-
 ## Full suite
 
 ```cmd

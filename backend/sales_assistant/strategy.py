@@ -6,6 +6,7 @@ from datetime import date
 from typing import Literal
 
 from backend.catalog.models import Tour
+from backend.sales_assistant.tour_discovery import understand_tour_query
 
 SalesStrategy = Literal[
     "tour_list",
@@ -71,14 +72,20 @@ def choose_strategy(query: str, topic: str) -> StrategyDecision:
 
     if topic == "tour":
         month = detect_month(normalised)
-        if month is not None or any(marker in normalised for marker in LIST_MARKERS):
-            return StrategyDecision("tour_list", month=month)
         if any(marker in normalised for marker in PRICE_MARKERS):
             return StrategyDecision("tour_price")
         if any(marker in normalised for marker in DATE_MARKERS):
             return StrategyDecision("tour_date")
         if any(marker in normalised for marker in DETAIL_MARKERS):
             return StrategyDecision("tour_details")
+
+        discovery = understand_tour_query(normalised)
+        if (
+            month is not None
+            or discovery.constrained
+            or any(marker in normalised for marker in LIST_MARKERS)
+        ):
+            return StrategyDecision("tour_list", month=month)
         return StrategyDecision("tour_details")
 
     if topic == "product":

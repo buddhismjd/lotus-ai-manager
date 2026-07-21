@@ -1,0 +1,14 @@
+{
+  "shops": [
+    {
+      "name": "Свет Лотоса",
+      "url": "https://svet-lotosa.tilda.ws/svet-lotosa-shop",
+      "fallback_store_parts": [
+        {
+          "storepartuid": "979629845002",
+          "recid": "2234421481"
+        }
+      ]
+    }
+  ]
+}

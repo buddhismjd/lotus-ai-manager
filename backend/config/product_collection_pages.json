@@ -1,0 +1,14 @@
+{
+  "statue": {
+    "label": "Посмотреть все статуи",
+    "url": "https://svet-lotosa.tilda.ws/statui-svet-lotosa"
+  },
+  "thangka": {
+    "label": "Перейти в магазин",
+    "url": "https://svet-lotosa.tilda.ws/svet-lotosa-shop"
+  },
+  "default": {
+    "label": "Перейти в магазин",
+    "url": "https://svet-lotosa.tilda.ws/svet-lotosa-shop"
+  }
+}

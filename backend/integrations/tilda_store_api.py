@@ -38,6 +38,8 @@ class StoreProduct:
     category: str
     image_url: str
     raw: dict[str, Any]
+    availability_status: str | None = None
+    material: str | None = None
 
 
 def _clean_html(value: Any) -> str:
@@ -126,6 +128,58 @@ def _normalize_image_url(value: str) -> str:
         return f"https:{value}"
 
     return value
+
+
+
+
+def _extract_availability_status(product: dict[str, Any]) -> str | None:
+    """Return only an explicitly published stock status; never infer made-to-order."""
+    text_values: list[str] = []
+    for key in (
+        "availability", "availability_status", "stock_status", "status",
+        "badge", "label", "inventory_status", "store_label",
+    ):
+        value = product.get(key)
+        if value not in (None, "", [], {}):
+            text_values.append(_clean_html(value).lower())
+
+    joined = " ".join(text_values)
+    published_text = _clean_html(
+        json.dumps(product, ensure_ascii=False, default=str)
+    ).lower()
+    status_text = f"{joined} {published_text}"
+    if re.search(r"под\s*заказ|на\s*заказ", status_text):
+        return "Под заказ"
+    if re.search(r"нет\s+в\s+наличии|нет\s+в\s+наличие|распродан|продан", status_text):
+        return "Нет в наличии"
+    if re.search(r"в\s+наличии|в\s+наличие", status_text):
+        return "В наличии"
+
+    for key in ("in_stock", "instock", "is_available"):
+        value = product.get(key)
+        if isinstance(value, bool):
+            return "В наличии" if value else "Нет в наличии"
+
+    quantity = _first_value(product, "quantity", "qty", "stock_quantity")
+    try:
+        if quantity not in (None, "") and float(str(quantity).replace(",", ".")) > 0:
+            return "В наличии"
+    except (TypeError, ValueError):
+        pass
+
+    return None
+
+
+def _extract_material(product: dict[str, Any], description: str) -> str | None:
+    direct = _clean_html(_first_value(product, "material", "materials", "composition"))
+    if direct:
+        return direct
+    intelligence = analyze_product(
+        title=_clean_html(_first_value(product, "title", "name")),
+        description=description,
+        category=_clean_html(_first_value(product, "category", "category_title", "group")),
+    )
+    return intelligence.materials[0] if intelligence.materials else None
 
 
 def parse_store_product(product: dict[str, Any]) -> StoreProduct:
@@ -220,6 +274,8 @@ def parse_store_product(product: dict[str, Any]) -> StoreProduct:
         url=url,
         category=category,
         image_url=_extract_image_url(product),
+        availability_status=_extract_availability_status(product),
+        material=_extract_material(product, description),
         raw=product,
     )
 
@@ -374,6 +430,8 @@ def product_to_document(product: StoreProduct) -> dict[str, Any]:
         ),
         f"SKU: {product.sku}" if product.sku else "",
         f"Изображение: {product.image_url}" if product.image_url else "",
+        f"Материал: {product.material}" if product.material else "",
+        f"Статус: {product.availability_status}" if product.availability_status else "",
         intelligence.to_search_text(),
     ]
 

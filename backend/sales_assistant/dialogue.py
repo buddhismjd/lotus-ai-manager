@@ -19,13 +19,18 @@ class NextActionType(StrEnum):
     ASK_CONTACT_METHOD = "ask_contact_method"
     ASK_CONTACT_VALUE = "ask_contact_value"
     LEAD_SAVED = "lead_saved"
+    EMAIL_FOLLOWUP = "email_followup"
+    EMAIL_SAVED = "email_saved"
+    OPEN_URL = "open_url"
+    ARTISAN_SELECTION = "artisan_selection"
 
 
 @dataclass(frozen=True, slots=True)
 class DialogueSuggestion:
     action: NextActionType
     label: str
-    message: str
+    message: str = ""
+    url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,14 +64,14 @@ class SalesDialogueManager:
                         "Расскажите подробнее про тур на Кайлас",
                     ),
                     DialogueSuggestion(
-                        NextActionType.SHOW_RELATED_TOURS,
-                        "Другой месяц",
-                        "Какие есть туры в ноябре?",
-                    ),
-                    DialogueSuggestion(
                         NextActionType.TRANSFER_MANAGER,
                         "Помочь с выбором",
                         "Помогите подобрать подходящий тур",
+                    ),
+                    DialogueSuggestion(
+                        NextActionType.EMAIL_FOLLOWUP,
+                        "Получать новые туры на email",
+                        "Хочу получать информацию о новых турах на email",
                     ),
                 ),
                 requires_manager=needs_manager,
@@ -95,6 +100,11 @@ class SalesDialogueManager:
                         "Связаться с менеджером",
                         f"Хочу связаться с менеджером по туру {subject}",
                     ),
+                    DialogueSuggestion(
+                        NextActionType.EMAIL_FOLLOWUP,
+                        "Получать новые туры на email",
+                        "Хочу получать информацию о новых турах на email",
+                    ),
                 ),
                 requires_manager=needs_manager,
             )
@@ -118,6 +128,11 @@ class SalesDialogueManager:
                         "Оставить заявку",
                         f"Хочу оставить заявку на {subject}",
                     ),
+                    DialogueSuggestion(
+                        NextActionType.EMAIL_FOLLOWUP,
+                        "Получать новые туры на email",
+                        "Хочу получать информацию о новых турах на email",
+                    ),
                 ),
                 requires_manager=needs_manager,
             )
@@ -135,6 +150,11 @@ class SalesDialogueManager:
                         NextActionType.TRANSFER_MANAGER,
                         "Помочь с выбором",
                         f"Нужна помощь с выбором товара {subject}",
+                    ),
+                    DialogueSuggestion(
+                        NextActionType.EMAIL_FOLLOWUP,
+                        "Получать новые товары на email",
+                        "Хочу получать информацию о новых товарах на email",
                     ),
                 ),
                 requires_manager=needs_manager,
@@ -158,6 +178,11 @@ class SalesDialogueManager:
                         NextActionType.TRANSFER_MANAGER,
                         "Задать вопрос",
                         "Хочу задать вопрос специалисту",
+                    ),
+                    DialogueSuggestion(
+                        NextActionType.EMAIL_FOLLOWUP,
+                        "Получить информацию на email",
+                        "Отправьте, пожалуйста, информацию о консультации на email",
                     ),
                 ),
                 requires_manager=needs_manager,

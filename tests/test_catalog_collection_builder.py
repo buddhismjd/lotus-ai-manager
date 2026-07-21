@@ -46,3 +46,23 @@ def test_tour_country_detection_is_strict():
     assert detect_country("Есть поездка в Непал?") == "Непал"
     assert detect_country("Есть поездка на Алтай?") == "Россия"
     assert detect_country("Какие путешествия у вас есть?") is None
+
+
+def test_product_collection_prefers_structured_image_and_availability(monkeypatch):
+    monkeypatch.setattr(
+        "backend.catalog.collection_builder.get_product_profile",
+        lambda _product_id: None,
+    )
+    product = Product(
+        id="product-1",
+        title="Статуя Белой Тары",
+        url="https://example.test/tproduct/1",
+        image_url="https://img.test/catalog-white-tara.jpg",
+        availability_status="Под заказ",
+    )
+
+    items = build_product_collection("Белая Тара", [product])
+
+    assert len(items) == 1
+    assert items[0].image_url == "https://img.test/catalog-white-tara.jpg"
+    assert items[0].availability == "Под заказ"

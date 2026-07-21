@@ -46,7 +46,7 @@ def test_missing_tour_price_is_honest_and_requests_manager(monkeypatch) -> None:
     reply = SalesAssistant().reply("Сколько стоит тур на Кайлас?", "sdm-price")
 
     assert reply.kind == "tour_price"
-    assert "не опубликована" in reply.answer
+    assert "не указана" in reply.answer
     assert "не буду придумывать" in reply.answer
     assert reply.needs_manager
     assert reply.next_action == NextActionType.LEAVE_CONTACT

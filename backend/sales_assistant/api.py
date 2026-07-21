@@ -4,8 +4,10 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from backend.sales_assistant.service import get_sales_assistant
+from backend.sales_assistant.selection_page import router as selection_router
 
 router = APIRouter(prefix="/api/sales", tags=["sales-assistant"])
+router.include_router(selection_router)
 
 
 @router.post("/chat")
@@ -27,6 +29,7 @@ async def sales_chat(payload: dict) -> JSONResponse:
                 "action": suggestion.action.value,
                 "label": suggestion.label,
                 "message": suggestion.message,
+                "url": suggestion.url,
             }
             for suggestion in reply.suggestions
         ],

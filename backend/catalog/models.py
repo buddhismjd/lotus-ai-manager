@@ -16,9 +16,11 @@ class Product:
     price: Decimal | None = None
     currency: str = "RUR"
     available: bool = True
+    availability_status: str | None = None
     material: str | None = None
     height_cm: float | None = None
     width_cm: float | None = None
+    image_url: str | None = None
     keywords: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 

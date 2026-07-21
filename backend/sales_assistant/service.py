@@ -13,8 +13,22 @@ from backend.sales_assistant.dialogue import (
 )
 from backend.sales_assistant.formatter import format_sales_response, format_tour_list
 from backend.sales_assistant.leads import LeadRepository
+from backend.sales_assistant.selection_page import build_selection_url
+from backend.sales_assistant.product_selection import (
+    ProductSelectionRequest,
+    ProductSelectionResult,
+    ProductSelectionService,
+    parse_product_selection_request,
+)
 from backend.sales_assistant.state import DialogueStage, DialogueState, DialogueStateStore
 from backend.sales_assistant.strategy import choose_strategy
+from backend.sales_assistant.tone import (
+    TONE,
+    email_request_for_topic,
+    email_saved_for_topic,
+    warm_missing_date,
+    warm_missing_price,
+)
 from backend.services.bodhi_service import answer_query
 from backend.services.response_builder import BuiltResponse
 from backend.structured_catalog.models import StructuredTour
@@ -46,6 +60,7 @@ class SalesAssistant:
         self._dialogue = SalesDialogueManager()
         self._tours = StructuredTourRepository()
         self._leads = LeadRepository()
+        self._product_selection = ProductSelectionService()
 
     def reset(self, session_id: str) -> None:
         self._states.reset(session_id)
@@ -53,18 +68,57 @@ class SalesAssistant:
     def reply(self, message: str, session_id: str = "default") -> SalesReply:
         query = message.strip()
         if not query:
-            return SalesReply("Напишите вопрос.", "empty", "unknown")
+            return SalesReply(TONE.empty_request, "empty", "unknown")
 
         state = self._states.get(session_id)
 
+        if state.stage in {
+            DialogueStage.ARTISAN_SOCIAL_METHOD,
+            DialogueStage.ARTISAN_SOCIAL_VALUE,
+            DialogueStage.ARTISAN_EMAIL,
+        }:
+            return self._handle_artisan_selection(query, state)
+
+        if state.stage == DialogueStage.EMAIL_VALUE:
+            return self._handle_email_followup(query, state)
+
         if state.stage != DialogueStage.DISCOVERY:
             return self._handle_lead_capture(query, state)
+
+        if self._starts_artisan_selection(query):
+            state.start_artisan_selection()
+            return SalesReply(
+                answer=(
+                    "С радостью уточню актуальное наличие у мастеров и помогу подготовить "
+                    "персональную подборку. Выберите, пожалуйста, удобный способ связи: "
+                    "Telegram или WhatsApp."
+                ),
+                kind="artisan_selection",
+                topic="product",
+                next_action=NextActionType.ARTISAN_SELECTION,
+                suggestions=(
+                    DialogueSuggestion(NextActionType.ARTISAN_SELECTION, "Telegram", "Telegram"),
+                    DialogueSuggestion(NextActionType.ARTISAN_SELECTION, "WhatsApp", "WhatsApp"),
+                ),
+                dialogue_stage=state.stage.value,
+            )
+
+        if self._starts_email_followup(query):
+            state.start_email_followup()
+            current_topic = self._state_topic(state)
+            return SalesReply(
+                answer=email_request_for_topic(current_topic),
+                kind="email_capture",
+                topic=current_topic,
+                next_action=NextActionType.EMAIL_FOLLOWUP,
+                dialogue_stage=state.stage.value,
+            )
 
         if self._starts_lead_capture(query):
             state.start_lead_capture()
             return SalesReply(
                 answer=(
-                    "Отлично, я помогу передать заявку менеджеру. "
+                    "С удовольствием помогу передать Ваш интерес менеджеру. "
                     "Как я могу к Вам обращаться?"
                 ),
                 kind="lead_capture",
@@ -72,6 +126,24 @@ class SalesAssistant:
                 next_action=NextActionType.ASK_NAME,
                 dialogue_stage=state.stage.value,
             )
+
+        selection_request = parse_product_selection_request(query)
+        if selection_request is not None:
+            selection_result = self._product_selection.select(selection_request)
+            state.remember_product_selection(
+                category=selection_request.category,
+                aspect=selection_request.aspect,
+                height_min_cm=selection_request.height_min_cm,
+                height_max_cm=selection_request.height_max_cm,
+            )
+            state.last_query = query
+            if len(selection_result.products) == 1:
+                state.active_title = selection_result.products[0].title
+                state.active_url = selection_result.products[0].url
+            else:
+                state.active_title = selection_request.aspect or selection_request.category_label
+                state.active_url = None
+            return self._product_selection_reply(selection_result)
 
         route = route_query(query)
         topic = self._topic(route.intent)
@@ -85,9 +157,21 @@ class SalesAssistant:
             if product_items:
                 state.last_query = query
                 state.topic = "product"
+                if len(product_items) == 1:
+                    state.active_title = product_items[0].title
+                    state.active_url = product_items[0].url
+                else:
+                    state.active_title = None
+                    state.active_url = None
                 answer = (
                     f"Нашла {len(product_items)} подходящих "
-                    + ("товар." if len(product_items) == 1 else "товара." if len(product_items) < 5 else "товаров.")
+                    + (
+                        "товар."
+                        if len(product_items) == 1
+                        else "товара."
+                        if len(product_items) < 5
+                        else "товаров."
+                    )
                     + " Все варианты представлены ниже."
                 )
                 return self._with_dialogue(
@@ -99,38 +183,6 @@ class SalesAssistant:
                     ),
                     decision.strategy,
                 )
-
-        if topic == "tour" and detect_country(query):
-            tour_items = build_tour_collection(query)
-            country = detect_country(query)
-            state.last_query = query
-            state.topic = "tour"
-            if tour_items:
-                planned_only = all(item.status == "planned" for item in tour_items)
-                answer = (
-                    f"По направлению «{country}» опубликованных программ пока нет, "
-                    "но готовится следующее путешествие:"
-                    if planned_only else
-                    f"Нашла путешествия по направлению «{country}»:"
-                )
-                return self._with_dialogue(
-                    SalesReply(
-                        answer=answer,
-                        kind="tour_collection",
-                        topic="tour",
-                        items=tuple(item.to_dict() for item in tour_items),
-                        needs_manager=planned_only,
-                    ),
-                    decision.strategy,
-                )
-            return self._with_dialogue(
-                SalesReply(
-                    answer=f"Сейчас я не нашла опубликованных или планируемых путешествий по направлению «{country}».",
-                    kind="tour_collection",
-                    topic="tour",
-                ),
-                decision.strategy,
-            )
 
         if self._asks_for_tour_selection(query) and state.candidate_tour_ids:
             state.last_query = query
@@ -153,13 +205,22 @@ class SalesAssistant:
                 kind="tour_list",
                 needs_manager=needs_manager,
             )
+            link_suggestions = tuple(
+                DialogueSuggestion(
+                    NextActionType.OPEN_URL,
+                    f"Открыть: {tour.title}",
+                    url=tour.url,
+                )
+                for tour in tours
+                if tour.url
+            )
             return SalesReply(
-                answer=format_tour_list(tours, month=decision.month),
+                answer=format_tour_list(tours, month=decision.month, limit=None),
                 kind="tour_list",
                 topic="tour",
                 needs_manager=plan.requires_manager,
                 next_action=plan.next_action,
-                suggestions=plan.suggestions,
+                suggestions=link_suggestions + plan.suggestions,
             )
 
         if topic == "psychologist":
@@ -200,6 +261,46 @@ class SalesAssistant:
                 decision.strategy,
             )
 
+        country = detect_country(query)
+        if (
+            topic == "tour"
+            and country
+            and decision.strategy == "tour_list"
+            and decision.month is None
+        ):
+            tour_items = build_tour_collection(query)
+            state.last_query = query
+            state.topic = "tour"
+            if tour_items:
+                planned_only = all(item.status == "planned" for item in tour_items)
+                answer = (
+                    f"По направлению «{country}» опубликованных программ пока нет, "
+                    "но готовится следующее путешествие:"
+                    if planned_only
+                    else f"Нашла путешествия по направлению «{country}»:"
+                )
+                return self._with_dialogue(
+                    SalesReply(
+                        answer=answer,
+                        kind="tour_collection",
+                        topic="tour",
+                        items=tuple(item.to_dict() for item in tour_items),
+                        needs_manager=planned_only,
+                    ),
+                    decision.strategy,
+                )
+            return self._with_dialogue(
+                SalesReply(
+                    answer=(
+                        "Сейчас я не нашла опубликованных или планируемых "
+                        f"путешествий по направлению «{country}»."
+                    ),
+                    kind="tour_collection",
+                    topic="tour",
+                ),
+                decision.strategy,
+            )
+
         if topic == "tour" and matched_tour is None and state.candidate_tour_ids:
             if self._is_ambiguous_tour_follow_up(query):
                 state.last_query = query
@@ -225,6 +326,13 @@ class SalesAssistant:
             resolved = self._find_structured_tour(response.title, response.url)
             if resolved is not None:
                 state.remember_active_tour(resolved)
+        elif response.kind in {"product", "psychologist"}:
+            state.active_title = response.title or (
+                "Консультация психолога-буддолога"
+                if response.kind == "psychologist"
+                else state.active_title
+            )
+            state.active_url = response.url
 
         state.last_query = query
         if resolved_topic != "unknown":
@@ -236,9 +344,7 @@ class SalesAssistant:
                 title = response.title or (tour.title if tour else "этот тур")
                 reply = SalesReply(
                     answer=(
-                        f"Стоимость тура «{title}» пока не опубликована на сайте. "
-                        "Я не буду придумывать цену. Могу помочь оставить заявку, "
-                        "и менеджер сообщит актуальную стоимость и наличие мест."
+                        warm_missing_price(title)
                     ),
                     kind="tour_price",
                     topic="tour",
@@ -265,7 +371,7 @@ class SalesAssistant:
             state.goal = None
             state.lead.clear()
             return SalesReply(
-                "Хорошо, оформление заявки отменено. Можем продолжить подбор.",
+                "Хорошо, оформление заявки остановлено. Буду рада продолжить беседу, когда Вам будет удобно.",
                 "lead_cancelled",
                 self._state_topic(state),
                 dialogue_stage=state.stage.value,
@@ -275,7 +381,7 @@ class SalesAssistant:
             name = query.strip()
             if len(name) < 2 or len(name) > 80:
                 return SalesReply(
-                    "Напишите, пожалуйста, Ваше имя.",
+                    "Подскажите, пожалуйста, как я могу к Вам обращаться.",
                     "lead_capture",
                     self._state_topic(state),
                     next_action=NextActionType.ASK_NAME,
@@ -284,7 +390,7 @@ class SalesAssistant:
             state.lead.name = name
             state.stage = DialogueStage.LEAD_CONTACT_METHOD
             return SalesReply(
-                "Спасибо. Какой способ связи Вам удобнее: Telegram, WhatsApp, телефон или email?",
+                "Благодарю Вас. Какой способ связи будет наиболее удобен: Telegram, WhatsApp, телефон или email?",
                 "lead_capture",
                 self._state_topic(state),
                 next_action=NextActionType.ASK_CONTACT_METHOD,
@@ -301,7 +407,7 @@ class SalesAssistant:
             method = self._parse_contact_method(query)
             if method is None:
                 return SalesReply(
-                    "Выберите, пожалуйста: Telegram, WhatsApp, телефон или email.",
+                    "Пожалуйста, выберите удобный способ связи: Telegram, WhatsApp, телефон или email.",
                     "lead_capture",
                     self._state_topic(state),
                     next_action=NextActionType.ASK_CONTACT_METHOD,
@@ -328,7 +434,7 @@ class SalesAssistant:
             value = query.strip()
             if not self._valid_contact(method, value):
                 return SalesReply(
-                    "Контакт выглядит неполным. Проверьте его и отправьте ещё раз.",
+                    "Похоже, в контакте есть неточность. Пожалуйста, проверьте его и отправьте ещё раз.",
                     "lead_capture",
                     self._state_topic(state),
                     next_action=NextActionType.ASK_CONTACT_VALUE,
@@ -344,7 +450,7 @@ class SalesAssistant:
             )
             interest = state.lead.interest
             state.stage = DialogueStage.LEAD_COMPLETE
-            answer = "Спасибо! Заявка сохранена и будет передана менеджеру."
+            answer = "Благодарю Вас. Заявка сохранена и будет бережно передана менеджеру."
             if interest and interest not in {"unknown", "contacts"}:
                 answer += f" Интерес: «{interest}»."
             state.stage = DialogueStage.DISCOVERY
@@ -362,9 +468,225 @@ class SalesAssistant:
 
         state.stage = DialogueStage.DISCOVERY
         return SalesReply(
-            "Давайте продолжим. Чем я могу помочь?",
+            "Буду рада продолжить. Что ещё Вас интересует?",
             "lead_reset",
             self._state_topic(state),
+            dialogue_stage=state.stage.value,
+        )
+
+    def _handle_email_followup(self, query: str, state: DialogueState) -> SalesReply:
+        if self._cancels_lead_capture(query):
+            state.stage = DialogueStage.DISCOVERY
+            state.goal = None
+            state.lead.clear()
+            return SalesReply(
+                "Хорошо, email не сохраняю. Буду рада продолжить беседу.",
+                "email_cancelled",
+                self._state_topic(state),
+                dialogue_stage=state.stage.value,
+            )
+
+        email = query.strip()
+        if not self._valid_contact("email", email):
+            return SalesReply(
+                TONE.email_invalid,
+                "email_capture",
+                self._state_topic(state),
+                next_action=NextActionType.EMAIL_FOLLOWUP,
+                dialogue_stage=state.stage.value,
+            )
+
+        interest = state.lead.interest
+        summary = state.lead.conversation_summary or state.last_query
+        subscription_topic = state.lead.subscription_topic or "requested_information"
+        consent_text = state.lead.consent_text or (
+            "Согласие получить информацию по текущему запросу."
+        )
+        current_topic = self._state_topic(state)
+        saved = self._leads.save(
+            name=state.lead.name or "Посетитель сайта",
+            contact_method="email",
+            contact_value=email,
+            interest=interest,
+            comment=(
+                f"subscription_topic={subscription_topic}; "
+                f"consent_text={consent_text}; "
+                f"interest_category={current_topic}; "
+                f"interest_title={interest or 'не указан'}; "
+                f"context={summary or 'не указан'}"
+            ),
+        )
+        state.stage = DialogueStage.DISCOVERY
+        state.goal = None
+        state.lead.clear()
+        answer = email_saved_for_topic(current_topic)
+        if interest and interest not in {"unknown", "contacts"}:
+            answer += f" Тема интереса: «{interest}»."
+        return SalesReply(
+            answer=answer,
+            kind="email_saved",
+            topic=self._state_topic(state),
+            next_action=NextActionType.EMAIL_SAVED,
+            dialogue_stage=DialogueStage.EMAIL_VALUE.value,
+            lead_id=saved.id,
+        )
+
+    def _product_selection_reply(
+        self,
+        result: ProductSelectionResult,
+    ) -> SalesReply:
+        request = result.request
+        subject = request.category_label
+        if request.aspect:
+            subject += f" {request.aspect}"
+        if request.height_label:
+            subject += f" высотой {request.height_label}"
+
+        suggestions: list[DialogueSuggestion] = []
+        if result.products:
+            count = len(result.products)
+            answer = (
+                f"С радостью подготовила точную подборку: {subject}. "
+                f"В неё вошло {count} подходящих позиций. "
+                "Откройте подборку, чтобы спокойно посмотреть каждый вариант."
+            )
+            suggestions.append(
+                DialogueSuggestion(
+                    NextActionType.OPEN_URL,
+                    "Открыть точную подборку",
+                    url=build_selection_url(request),
+                )
+            )
+        else:
+            answer = (
+                f"В опубликованном каталоге сейчас нет точных совпадений для запроса: {subject}. "
+                "Я не стану предлагать неподходящие варианты. Можно уточнить актуальное "
+                "наличие у мастеров и подготовить персональную подборку."
+            )
+
+        suggestions.append(
+            DialogueSuggestion(
+                NextActionType.ARTISAN_SELECTION,
+                "Уточнить наличие у мастеров",
+                "Хочу персональную подборку от мастеров",
+            )
+        )
+        tail = (
+            "\n\nКроме позиций на сайте, мы можем уточнить актуальное наличие у мастеров "
+            "и прислать Вам персональную подборку. Для этого понадобятся контакт "
+            "в Telegram или WhatsApp и email."
+        )
+        return SalesReply(
+            answer=answer + tail,
+            kind="product_selection",
+            topic="product",
+            title=request.aspect or request.category_label.capitalize(),
+            next_action=NextActionType.ARTISAN_SELECTION,
+            suggestions=tuple(suggestions),
+        )
+
+    def _handle_artisan_selection(
+        self,
+        query: str,
+        state: DialogueState,
+    ) -> SalesReply:
+        if self._cancels_lead_capture(query):
+            state.stage = DialogueStage.DISCOVERY
+            state.goal = None
+            state.lead.clear()
+            return SalesReply(
+                "Хорошо, запрос на персональную подборку остановлен. Буду рада продолжить беседу.",
+                "artisan_cancelled",
+                "product",
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.ARTISAN_SOCIAL_METHOD:
+            method = self._parse_social_method(query)
+            if method is None:
+                return SalesReply(
+                    "Выберите, пожалуйста, Telegram или WhatsApp.",
+                    "artisan_selection",
+                    "product",
+                    next_action=NextActionType.ARTISAN_SELECTION,
+                    suggestions=(
+                        DialogueSuggestion(NextActionType.ARTISAN_SELECTION, "Telegram", "Telegram"),
+                        DialogueSuggestion(NextActionType.ARTISAN_SELECTION, "WhatsApp", "WhatsApp"),
+                    ),
+                    dialogue_stage=state.stage.value,
+                )
+            state.lead.social_channel = method
+            state.stage = DialogueStage.ARTISAN_SOCIAL_VALUE
+            label = "Ваш Telegram, например @username" if method == "telegram" else "номер WhatsApp с кодом страны"
+            return SalesReply(
+                f"Напишите, пожалуйста, {label}.",
+                "artisan_selection",
+                "product",
+                next_action=NextActionType.ARTISAN_SELECTION,
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.ARTISAN_SOCIAL_VALUE:
+            method = state.lead.social_channel or "telegram"
+            value = query.strip()
+            if not self._valid_contact(method, value):
+                return SalesReply(
+                    "Похоже, в контакте есть неточность. Пожалуйста, проверьте его и отправьте ещё раз.",
+                    "artisan_selection",
+                    "product",
+                    next_action=NextActionType.ARTISAN_SELECTION,
+                    dialogue_stage=state.stage.value,
+                )
+            state.lead.social_contact = value
+            state.stage = DialogueStage.ARTISAN_EMAIL
+            return SalesReply(
+                "Благодарю Вас. Теперь напишите, пожалуйста, email, на который мы сможем прислать подборку.",
+                "artisan_selection",
+                "product",
+                next_action=NextActionType.ARTISAN_SELECTION,
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.ARTISAN_EMAIL:
+            email = query.strip()
+            if not self._valid_contact("email", email):
+                return SalesReply(
+                    TONE.email_invalid,
+                    "artisan_selection",
+                    "product",
+                    next_action=NextActionType.ARTISAN_SELECTION,
+                    dialogue_stage=state.stage.value,
+                )
+            saved = self._leads.save_artisan_selection(
+                social_channel=state.lead.social_channel or "telegram",
+                social_contact=state.lead.social_contact or "",
+                email=email,
+                interest=state.lead.interest,
+                selection_category=state.lead.selection_category,
+                selection_aspect=state.lead.selection_aspect,
+                requested_height_min_cm=state.lead.requested_height_min_cm,
+                requested_height_max_cm=state.lead.requested_height_max_cm,
+                consent_text=state.lead.consent_text or "",
+                conversation_summary=state.last_query,
+            )
+            state.stage = DialogueStage.DISCOVERY
+            state.goal = None
+            state.lead.clear()
+            return SalesReply(
+                "Благодарю Вас. Контакты и параметры подбора сохранены. Мы уточним актуальное наличие у мастеров и бережно пришлём Вам подходящие варианты.",
+                "artisan_saved",
+                "product",
+                needs_manager=True,
+                next_action=NextActionType.LEAD_SAVED,
+                dialogue_stage=DialogueStage.ARTISAN_EMAIL.value,
+                lead_id=saved.id,
+            )
+
+        state.stage = DialogueStage.DISCOVERY
+        return SalesReply(
+            "Буду рада продолжить. Что ещё Вас интересует?",
+            "artisan_reset",
+            "product",
             dialogue_stage=state.stage.value,
         )
 
@@ -374,8 +696,8 @@ class SalesAssistant:
             return self._with_dialogue(
                 SalesReply(
                     answer=(
-                        "Я не сохранил варианты для сравнения. "
-                        "Напишите месяц или направление, и я покажу подходящие туры."
+                        "Мне не удалось сохранить предыдущие варианты. "
+                        "Напишите, пожалуйста, какое направление Вас заинтересовало, и я вновь покажу подходящие путешествия."
                     ),
                     kind="fallback",
                     topic="tour",
@@ -384,7 +706,7 @@ class SalesAssistant:
                 "tour_list",
             )
 
-        cards: list[str] = ["Давайте подберём подходящий вариант из найденных туров:"]
+        cards: list[str] = ["С радостью помогу внимательнее рассмотреть найденные путешествия:"]
         for tour in tours[:4]:
             facts = [f"🗻 {tour.title}"]
             if tour.schedule and tour.schedule.source_text:
@@ -395,10 +717,7 @@ class SalesAssistant:
                 facts.append(f"📍 {', '.join(tour.countries)}")
             cards.append("\n".join(facts))
 
-        cards.append(
-            "Что для Вас важнее: духовное паломничество, треккинг, "
-            "более спокойный маршрут или конкретная страна?"
-        )
+        cards.append("Выберите путешествие, о котором Вам хотелось бы узнать подробнее.")
         suggestions = tuple(
             DialogueSuggestion(
                 NextActionType.SHOW_TOUR_DETAILS,
@@ -413,6 +732,7 @@ class SalesAssistant:
             topic="tour",
             next_action=NextActionType.ASK_PREFERENCE,
             suggestions=suggestions,
+            items=reply.items,
         )
 
     def _ask_which_tour(self, state: DialogueState) -> SalesReply:
@@ -441,9 +761,7 @@ class SalesAssistant:
         if tour.price is None:
             return SalesReply(
                 answer=(
-                    f"Стоимость тура «{tour.title}» пока не опубликована на сайте. "
-                    "Я не буду придумывать цену. Могу помочь оставить заявку, "
-                    "и менеджер сообщит актуальную стоимость и наличие мест."
+                    warm_missing_price(tour.title)
                 ),
                 kind="tour_price",
                 topic="tour",
@@ -452,7 +770,7 @@ class SalesAssistant:
                 needs_manager=True,
             )
         return SalesReply(
-            answer=f"Стоимость тура «{tour.title}»: {tour.price} {tour.currency}.",
+            answer=f"Стоимость путешествия «{tour.title}» составляет {tour.price} {tour.currency}.",
             kind="tour_price",
             topic="tour",
             title=tour.title,
@@ -466,8 +784,7 @@ class SalesAssistant:
             needs_manager = False
         else:
             answer = (
-                f"Точная дата тура «{tour.title}» пока не опубликована. "
-                "Могу передать вопрос менеджеру."
+                warm_missing_date(tour.title)
             )
             needs_manager = True
         return SalesReply(
@@ -487,6 +804,17 @@ class SalesAssistant:
             title=reply.title,
             needs_manager=reply.needs_manager,
         )
+        suggestions = list(plan.suggestions)
+        if reply.url and reply.topic in {"tour", "product"}:
+            label = "Открыть страницу тура" if reply.topic == "tour" else "Открыть товар"
+            suggestions.insert(
+                0,
+                DialogueSuggestion(
+                    NextActionType.OPEN_URL,
+                    label,
+                    url=reply.url,
+                ),
+            )
         return SalesReply(
             answer=reply.answer,
             kind=reply.kind,
@@ -495,8 +823,7 @@ class SalesAssistant:
             url=reply.url,
             needs_manager=plan.requires_manager,
             next_action=plan.next_action,
-            suggestions=plan.suggestions,
-            items=reply.items,
+            suggestions=tuple(suggestions),
         )
 
     def _candidate_tours(self, state: DialogueState) -> list[StructuredTour]:
@@ -600,6 +927,48 @@ class SalesAssistant:
         return any(marker in lowered for marker in markers) or len(lowered.split()) <= 4
 
     @classmethod
+    def _starts_artisan_selection(cls, query: str) -> bool:
+        lowered = cls._normalise(query)
+        return any(
+            marker in lowered
+            for marker in (
+                "персональную подборку",
+                "подборку от мастеров",
+                "наличие у мастеров",
+                "уточнить у мастеров",
+            )
+        )
+
+    @classmethod
+    def _parse_social_method(cls, query: str) -> str | None:
+        lowered = cls._normalise(query)
+        if "telegram" in lowered or "телеграм" in lowered:
+            return "telegram"
+        if "whatsapp" in lowered or "ватсап" in lowered or "вотсап" in lowered:
+            return "whatsapp"
+        return None
+
+    @classmethod
+    def _starts_email_followup(cls, query: str) -> bool:
+        lowered = cls._normalise(query)
+        markers = (
+            "отправьте информацию на email",
+            "отправить информацию на email",
+            "отправьте на email",
+            "отправьте на почту",
+            "пришлите на email",
+            "пришлите на почту",
+            "хочу получить на email",
+            "новых турах на email",
+            "новых товарах на email",
+            "консультации на email",
+            "информацию на email",
+            "информацию о консультации на email",
+            "информацию на почту",
+        )
+        return any(marker in lowered for marker in markers)
+
+    @classmethod
     def _starts_lead_capture(cls, query: str) -> bool:
         lowered = cls._normalise(query)
         markers = (
@@ -645,24 +1014,21 @@ class SalesAssistant:
         lowered = query.casefold()
         if any(word in lowered for word in ("цена", "стоимость", "сколько")):
             text = (
-                "Стоимость консультации в доступных данных не указана. "
-                "Я не буду придумывать цену. Оставьте контакт, и менеджер "
-                "уточнит актуальную стоимость и свободное время."
+                "Стоимость консультации пока не указана на сайте. Я не стану вводить Вас в заблуждение. "
+                "Могу сохранить Ваш интерес, чтобы менеджер уточнил актуальную стоимость и свободное время."
             )
             return SalesReply(text, "psychologist", "psychologist", needs_manager=True)
         text = (
-            "Буддолог-психолог помогает со снижением стресса, развитием "
-            "осознанности и работой с эмоциями. Чтобы подобрать формат "
-            "консультации и время, напишите, с каким запросом Вы обращаетесь."
+            "Консультация психолога-буддолога может поддержать в работе со стрессом, эмоциями и развитии осознанности. "
+            "Если Вам откликается такой формат, расскажите, пожалуйста, с каким вопросом Вы хотели бы обратиться."
         )
         return SalesReply(text, "psychologist", "psychologist")
 
     @staticmethod
     def _contacts_reply() -> SalesReply:
         return SalesReply(
-            "Связаться с командой «Свет Лотоса» можно через раздел контактов "
-            "на сайте. Также можете оставить здесь имя и удобный способ связи — "
-            "вопрос будет передан менеджеру.",
+            "Связаться с командой «Свет Лотоса» можно через раздел контактов на сайте. "
+            "При желании Вы также можете оставить здесь имя и удобный способ связи — мы бережно передадим Ваш вопрос менеджеру.",
             "contacts",
             "contacts",
             url="https://svet-lotosa.tilda.ws/",

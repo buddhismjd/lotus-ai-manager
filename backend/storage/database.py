@@ -74,6 +74,71 @@ CREATE TABLE IF NOT EXISTS leads (
         ON DELETE SET NULL
 );
 
+
+CREATE TABLE IF NOT EXISTS product_catalog_items (
+    product_uid TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL UNIQUE,
+    category TEXT,
+    description TEXT NOT NULL DEFAULT '',
+    price TEXT,
+    currency TEXT,
+    sku TEXT,
+    image_url TEXT,
+    availability_status TEXT,
+    material TEXT,
+    source_hash TEXT NOT NULL,
+    synced_at TEXT NOT NULL,
+    FOREIGN KEY (document_id)
+        REFERENCES documents(id)
+        ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE IF NOT EXISTS product_raw_snapshots (
+    product_uid TEXT PRIMARY KEY,
+    page_url TEXT NOT NULL,
+    raw_json TEXT NOT NULL,
+    html_sha256 TEXT NOT NULL,
+    snapshot_sha256 TEXT NOT NULL,
+    captured_at TEXT NOT NULL,
+    source_kind TEXT NOT NULL DEFAULT 'product_page_script',
+    extractor_version TEXT NOT NULL DEFAULT '2.1'
+);
+
+CREATE TABLE IF NOT EXISTS product_snapshot_items (
+    product_uid TEXT PRIMARY KEY,
+    url TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    brand TEXT,
+    sku TEXT,
+    price TEXT,
+    currency TEXT,
+    gallery_json TEXT NOT NULL DEFAULT '[]',
+    primary_image TEXT,
+    quantity TEXT,
+    characteristics_json TEXT NOT NULL DEFAULT '[]',
+    properties_json TEXT NOT NULL DEFAULT '[]',
+    partuids_json TEXT NOT NULL DEFAULT '[]',
+    source_hash TEXT NOT NULL,
+    captured_at TEXT NOT NULL,
+    category TEXT,
+    material TEXT,
+    height_cm TEXT,
+    width_cm TEXT,
+    depth_cm TEXT,
+    availability_status TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_snapshot_title
+ON product_snapshot_items(title);
+
+CREATE INDEX IF NOT EXISTS idx_product_snapshot_sku
+ON product_snapshot_items(sku);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -94,6 +159,12 @@ ON messages(dialog_id);
 
 CREATE INDEX IF NOT EXISTS idx_leads_status
 ON leads(status);
+
+CREATE INDEX IF NOT EXISTS idx_product_catalog_status
+ON product_catalog_items(availability_status);
+
+CREATE INDEX IF NOT EXISTS idx_product_catalog_category
+ON product_catalog_items(category);
 """
 
 
@@ -115,9 +186,37 @@ def get_connection() -> Iterator[sqlite3.Connection]:
         connection.close()
 
 
+def _ensure_column(
+    connection: sqlite3.Connection,
+    table_name: str,
+    column_name: str,
+    definition: str,
+) -> None:
+    columns = {
+        row["name"]
+        for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+    if column_name not in columns:
+        connection.execute(
+            f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}"
+        )
+
+
 def initialize_database() -> Path:
     with get_connection() as connection:
         connection.executescript(SCHEMA)
+        _ensure_column(
+            connection,
+            "product_raw_snapshots",
+            "source_kind",
+            "TEXT NOT NULL DEFAULT 'product_page_script'",
+        )
+        _ensure_column(
+            connection,
+            "product_raw_snapshots",
+            "extractor_version",
+            "TEXT NOT NULL DEFAULT '2.1'",
+        )
 
     return DATABASE_FILE
 

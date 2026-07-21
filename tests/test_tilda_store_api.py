@@ -92,3 +92,38 @@ def test_fetch_all_products_follows_nextslice(monkeypatch) -> None:
     assert metadata["expected_total"] == 3
     assert metadata["received_total"] == 3
     assert metadata["pages"] == 2
+
+
+def test_parse_store_product_preserves_image_material_and_explicit_status() -> None:
+    product = tilda_store_api.parse_store_product(
+        {
+            "uid": "900",
+            "title": "Статуя Зеленой Тары",
+            "descr": "Бронзовая статуя. Высота 14 см.",
+            "img": "//static.tildacdn.com/statue.jpg",
+            "availability_status": "Под заказ",
+            "material": "бронза",
+        }
+    )
+
+    assert product.image_url == "https://static.tildacdn.com/statue.jpg"
+    assert product.material == "бронза"
+    assert product.availability_status == "Под заказ"
+
+
+def test_product_document_contains_commercial_card_metadata() -> None:
+    product = tilda_store_api.parse_store_product(
+        {
+            "uid": "901",
+            "title": "Статуя Будды",
+            "descr": "Латунная статуя. Высота 12 см.",
+            "img": "https://static.tildacdn.com/buddha.jpg",
+            "availability": "В наличии",
+        }
+    )
+
+    document = tilda_store_api.product_to_document(product)
+
+    assert "Изображение: https://static.tildacdn.com/buddha.jpg" in document["content"]
+    assert "Материал: латунь" in document["content"]
+    assert "Статус: В наличии" in document["content"]

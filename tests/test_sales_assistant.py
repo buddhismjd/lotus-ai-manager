@@ -6,7 +6,7 @@ from backend.sales_assistant.service import SalesAssistant
 def test_psychologist_answer_is_factual() -> None:
     reply = SalesAssistant().reply("Чем помогает буддолог-психолог?", "a")
     assert reply.topic == "psychologist"
-    assert "стресса" in reply.answer
+    assert "стресс" in reply.answer
     assert not reply.needs_manager
 
 
