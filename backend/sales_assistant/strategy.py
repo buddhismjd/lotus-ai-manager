@@ -82,7 +82,7 @@ def choose_strategy(query: str, topic: str) -> StrategyDecision:
         discovery = understand_tour_query(normalised)
         if (
             month is not None
-            or discovery.constrained
+            or discovery.natural_periods
             or any(marker in normalised for marker in LIST_MARKERS)
         ):
             return StrategyDecision("tour_list", month=month)

@@ -190,6 +190,62 @@ class SalesAssistant:
             state.goal = "choose_tour"
             return self._tour_selection_reply(state)
 
+        country = detect_country(query)
+        normalised_query = self._normalise(query)
+        explicit_country = country is not None and country.casefold() in normalised_query
+        country_collection_request = explicit_country and any(
+            marker in normalised_query
+            for marker in (
+                "возите",
+                "есть поезд",
+                "есть тур",
+                "туры в",
+                "поездки в",
+                "путешествия в",
+                "что есть",
+                "покажите",
+                "покажи",
+            )
+        )
+        if (
+            topic == "tour"
+            and country_collection_request
+            and decision.month is None
+            and decision.strategy not in {"tour_price", "tour_date"}
+        ):
+            tour_items = build_tour_collection(query)
+            state.last_query = query
+            state.topic = "tour"
+            if tour_items:
+                planned_only = all(item.status == "planned" for item in tour_items)
+                answer = (
+                    f"По направлению «{country}» опубликованных программ пока нет, "
+                    "но готовится следующее путешествие:"
+                    if planned_only
+                    else f"Нашла путешествия по направлению «{country}»:"
+                )
+                return self._with_dialogue(
+                    SalesReply(
+                        answer=answer,
+                        kind="tour_collection",
+                        topic="tour",
+                        items=tuple(item.to_dict() for item in tour_items),
+                        needs_manager=planned_only,
+                    ),
+                    "tour_list",
+                )
+            return self._with_dialogue(
+                SalesReply(
+                    answer=(
+                        "Сейчас я не нашла опубликованных или планируемых "
+                        f"путешествий по направлению «{country}»."
+                    ),
+                    kind="tour_collection",
+                    topic="tour",
+                ),
+                "tour_list",
+            )
+
         if decision.strategy == "tour_list":
             tours = (
                 self._tours.list_by_month(decision.month)
@@ -258,46 +314,6 @@ class SalesAssistant:
             state.last_query = query
             return self._with_dialogue(
                 self._tour_date_reply(matched_tour),
-                decision.strategy,
-            )
-
-        country = detect_country(query)
-        if (
-            topic == "tour"
-            and country
-            and decision.strategy == "tour_list"
-            and decision.month is None
-        ):
-            tour_items = build_tour_collection(query)
-            state.last_query = query
-            state.topic = "tour"
-            if tour_items:
-                planned_only = all(item.status == "planned" for item in tour_items)
-                answer = (
-                    f"По направлению «{country}» опубликованных программ пока нет, "
-                    "но готовится следующее путешествие:"
-                    if planned_only
-                    else f"Нашла путешествия по направлению «{country}»:"
-                )
-                return self._with_dialogue(
-                    SalesReply(
-                        answer=answer,
-                        kind="tour_collection",
-                        topic="tour",
-                        items=tuple(item.to_dict() for item in tour_items),
-                        needs_manager=planned_only,
-                    ),
-                    decision.strategy,
-                )
-            return self._with_dialogue(
-                SalesReply(
-                    answer=(
-                        "Сейчас я не нашла опубликованных или планируемых "
-                        f"путешествий по направлению «{country}»."
-                    ),
-                    kind="tour_collection",
-                    topic="tour",
-                ),
                 decision.strategy,
             )
 
