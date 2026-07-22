@@ -15,9 +15,11 @@ from backend.services.dashboard_service import get_dashboard_data
 from backend.services.knowledge_service import load_knowledge, rebuild_knowledge, search_knowledge
 from backend.services.llm_service import ollama_available
 from backend.sales_assistant.api import router as sales_router
+from backend.widget_integration import router as widget_router
 
 app = FastAPI(title="Lotus AI Manager", version="0.7.0")
 app.include_router(sales_router)
+app.include_router(widget_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # только для локальной разработки

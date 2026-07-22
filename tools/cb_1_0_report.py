@@ -1,0 +1,7 @@
+print('CB-1.0 Website Integration')
+print('===========================')
+print('Backend serves widget JS/CSS and Tilda embed template')
+print('Widget uses stateful /api/sales/chat endpoint')
+print('Browser session_id persists in localStorage')
+print('Rich cards and dialogue suggestions are rendered')
+print('Production requires an internet-accessible HTTPS backend domain')
