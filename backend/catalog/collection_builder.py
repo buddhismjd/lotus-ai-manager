@@ -97,13 +97,11 @@ def _matches_product(product: Product, query: str) -> bool:
     return bool(requested_kind or requested_entities or requested_materials)
 
 
-def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
-    source = list(products) if products is not None else ProductRepository().list_all()
-    matched = [product for product in source if _matches_product(product, query)]
-
+def build_product_items(products: Iterable[Product]) -> list[CollectionItem]:
+    """Convert products into complete, deduplicated UI collection items."""
     items: list[CollectionItem] = []
     seen: set[str] = set()
-    for product in matched:
+    for product in products:
         identity = product.url or product.id
         if identity in seen:
             continue
@@ -124,4 +122,10 @@ def build_product_collection(query: str, products: Iterable[Product] | None = No
     return items
 
 
-__all__ = ["CollectionItem", "build_product_collection"]
+def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
+    source = list(products) if products is not None else ProductRepository().list_all()
+    matched = [product for product in source if _matches_product(product, query)]
+    return build_product_items(matched)
+
+
+__all__ = ["CollectionItem", "build_product_collection", "build_product_items"]

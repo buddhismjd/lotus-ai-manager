@@ -136,3 +136,43 @@ def test_artisan_workflow_collects_social_and_email() -> None:
     assert payload["selection_aspect"] == "Ченрезиг"
     assert payload["requested_height_min_cm"] == 15
     assert payload["requested_height_max_cm"] == 20
+
+
+def test_selection_reply_returns_every_matching_product_as_complete_card() -> None:
+    products = [
+        Product(
+            id="tara-1",
+            title="Статуя Белой Тары 18 см",
+            url="https://example.com/tara-1",
+            description="Высота 18 см. Латунь.",
+            available=True,
+            availability_status="В наличии",
+            material="Латунь",
+            height_cm=18,
+            image_url="https://example.com/tara-1.jpg",
+        ),
+        Product(
+            id="tara-2",
+            title="Статуя Белой Тары 22 см",
+            url="https://example.com/tara-2",
+            description="Высота 22 см. Бронза.",
+            available=False,
+            availability_status="Под заказ",
+            material="Бронза",
+            height_cm=22,
+            image_url="https://example.com/tara-2.jpg",
+        ),
+    ]
+    assistant = SalesAssistant()
+    assistant._product_selection = ProductSelectionService(FakeProductRepository(products))
+
+    reply = assistant.reply("Покажите статуи Белой Тары", "all-tara-products")
+
+    assert reply.kind == "product_selection"
+    assert len(reply.items) == 2
+    assert [item["id"] for item in reply.items] == ["tara-1", "tara-2"]
+    assert all(item["image_url"] for item in reply.items)
+    assert reply.items[0]["material"] == "Латунь"
+    assert reply.items[0]["size"] == "высота 18 см"
+    assert reply.items[0]["availability"] == "В наличии"
+    assert reply.items[1]["availability"] == "Под заказ"

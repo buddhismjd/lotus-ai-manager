@@ -78,3 +78,31 @@ def test_dialogue_state_snapshot_is_copy() -> None:
 
     assert store.get("snapshot").topic == "tour"
     assert snapshot.candidate_tour_ids == ("one", "two")
+
+
+def test_standalone_country_query_uses_country_collection(monkeypatch) -> None:
+    from backend.catalog.collection_builder import CollectionItem
+    import backend.sales_assistant.service as service_module
+
+    captured: list[str] = []
+
+    def fake_collection(query: str):
+        captured.append(query)
+        return [
+            CollectionItem(
+                id="lapchi",
+                title="Лапчи — место силы Миларепы",
+                url="https://example.com/lapchi",
+                material="Непал",
+            )
+        ]
+
+    monkeypatch.setattr(service_module, "build_tour_collection", fake_collection)
+    assistant = SalesAssistant()
+
+    reply = assistant.reply("Непал", "standalone-country")
+
+    assert captured == ["Непал"]
+    assert reply.kind == "tour_collection"
+    assert len(reply.items) == 1
+    assert reply.items[0]["title"] == "Лапчи — место силы Миларепы"

@@ -18,6 +18,35 @@ def detect_country(query: str) -> str | None:
     return None
 
 
+def is_country_collection_query(query: str) -> bool:
+    """Return True when a query asks for a country-level tour collection."""
+    text = normalize(query)
+    country = detect_country(query)
+    if country is None:
+        return False
+
+    country_text = normalize(country)
+    if country_text not in text:
+        return False
+    if text == country_text:
+        return True
+
+    return any(
+        marker in text
+        for marker in (
+            "возите",
+            "есть поезд",
+            "есть тур",
+            "туры в",
+            "поездки в",
+            "путешествия в",
+            "что есть",
+            "покажите",
+            "покажи",
+        )
+    )
+
+
 def _published_item(tour: StructuredTour) -> CollectionItem:
     date_text = tour.schedule.source_text if tour.schedule else None
     size = f"{tour.duration_days} дней" if tour.duration_days else None
@@ -64,4 +93,4 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
     ]
 
 
-__all__ = ["build_tour_collection", "build_tour_items", "detect_country"]
+__all__ = ["build_tour_collection", "build_tour_items", "detect_country", "is_country_collection_query"]

@@ -4,8 +4,13 @@ from dataclasses import dataclass
 from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
-from backend.catalog.collection_builder import build_product_collection
-from backend.tours.collection_builder import build_tour_collection, build_tour_items, detect_country
+from backend.catalog.collection_builder import build_product_collection, build_product_items
+from backend.tours.collection_builder import (
+    build_tour_collection,
+    build_tour_items,
+    detect_country,
+    is_country_collection_query,
+)
 from backend.sales_assistant.dialogue import (
     DialogueSuggestion,
     NextActionType,
@@ -147,6 +152,12 @@ class SalesAssistant:
 
         route = route_query(query)
         topic = self._topic(route.intent)
+        country = detect_country(query)
+        country_collection_request = is_country_collection_query(query)
+        if country_collection_request:
+            topic = "tour"
+        elif topic == "unknown" and country is not None:
+            topic = "tour"
         if topic == "unknown" and self._is_follow_up(query):
             topic = self._state_topic(state)
 
@@ -190,23 +201,7 @@ class SalesAssistant:
             state.goal = "choose_tour"
             return self._tour_selection_reply(state)
 
-        country = detect_country(query)
         normalised_query = self._normalise(query)
-        explicit_country = country is not None and country.casefold() in normalised_query
-        country_collection_request = explicit_country and any(
-            marker in normalised_query
-            for marker in (
-                "возите",
-                "есть поезд",
-                "есть тур",
-                "туры в",
-                "поездки в",
-                "путешествия в",
-                "что есть",
-                "покажите",
-                "покажи",
-            )
-        )
         if (
             topic == "tour"
             and country_collection_request
@@ -592,6 +587,10 @@ class SalesAssistant:
             "и прислать Вам персональную подборку. Для этого понадобятся контакт "
             "в Telegram или WhatsApp и email."
         )
+        items = tuple(
+            item.to_dict()
+            for item in build_product_items(result.products)
+        )
         return SalesReply(
             answer=answer + tail,
             kind="product_selection",
@@ -599,6 +598,7 @@ class SalesAssistant:
             title=request.aspect or request.category_label.capitalize(),
             next_action=NextActionType.ARTISAN_SELECTION,
             suggestions=tuple(suggestions),
+            items=items,
         )
 
     def _handle_artisan_selection(
@@ -841,6 +841,9 @@ class SalesAssistant:
             needs_manager=plan.requires_manager,
             next_action=plan.next_action,
             suggestions=tuple(suggestions),
+            dialogue_stage=reply.dialogue_stage,
+            lead_id=reply.lead_id,
+            items=reply.items,
         )
 
     def _candidate_tours(self, state: DialogueState) -> list[StructuredTour]:
