@@ -46,6 +46,15 @@ LIST_MARKERS = (
 DETAIL_MARKERS = ("расскаж", "подроб", "программ", "что входит", "условия")
 PRICE_MARKERS = ("цен", "стоим", "сколько стоит")
 DATE_MARKERS = ("когда", "дат", "в каком месяц")
+JOURNEY_INTENT_MARKERS = (
+    "хочу",
+    "хотел бы",
+    "хотела бы",
+    "возите",
+    "поехать",
+    "отправиться",
+    "по местам",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +93,10 @@ def choose_strategy(query: str, topic: str) -> StrategyDecision:
             month is not None
             or discovery.natural_periods
             or any(marker in normalised for marker in LIST_MARKERS)
+            or (
+                discovery.constrained
+                and any(marker in normalised for marker in JOURNEY_INTENT_MARKERS)
+            )
         ):
             return StrategyDecision("tour_list", month=month)
         return StrategyDecision("tour_details")

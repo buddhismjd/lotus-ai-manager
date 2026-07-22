@@ -33,6 +33,11 @@ def _published_item(tour: StructuredTour) -> CollectionItem:
     )
 
 
+def build_tour_items(tours: list[StructuredTour]) -> list[CollectionItem]:
+    """Convert structured tours into serializable collection items."""
+    return [_published_item(tour) for tour in tours]
+
+
 def build_tour_collection(query: str) -> list[CollectionItem]:
     country = detect_country(query)
     if not country:
@@ -43,7 +48,7 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
         if country in tour.countries
     ]
     if published:
-        return [_published_item(tour) for tour in published]
+        return build_tour_items(published)
 
     return [
         CollectionItem(
@@ -59,4 +64,4 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
     ]
 
 
-__all__ = ["build_tour_collection", "detect_country"]
+__all__ = ["build_tour_collection", "build_tour_items", "detect_country"]

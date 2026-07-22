@@ -1,4 +1,4 @@
-# Python virtual environments
+﻿# Python virtual environments
 .venv/
 venv/
 
@@ -13,16 +13,19 @@ __pycache__/
 htmlcov/
 coverage.xml
 
-# Local environment and editor files
+# Local environment
 .env
 .env.local
 .continue/
 .vscode/
 
-# Runtime logs and generated application data
+# Application runtime data
 logs/
-data/
-knowledge/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/dialogs.jsonl
+data/knowledge.json
 
 # Build artifacts
 build/
@@ -35,18 +38,12 @@ backup*/
 archive*/
 *.bak
 
-# Local ad-hoc test launchers
+# Temporary patch scripts
+apply_*.py
+
+# Local temporary test launchers
 test_*.bat
 
-# Temporary patch and delivery artifacts
-apply_*.py
-*.patch.txt
-*.zip
-
-# Accidental shell-output files
-tatus --short
-
-# The application knowledge package remains trackable
+# Preserve production knowledge package
 !backend/knowledge/
-!backend/knowledge/**/*.py
-!backend/knowledge/**/*.json
+!backend/knowledge/**

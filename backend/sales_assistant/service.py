@@ -5,7 +5,7 @@ from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
 from backend.catalog.collection_builder import build_product_collection
-from backend.tours.collection_builder import build_tour_collection, detect_country
+from backend.tours.collection_builder import build_tour_collection, build_tour_items, detect_country
 from backend.sales_assistant.dialogue import (
     DialogueSuggestion,
     NextActionType,
@@ -742,13 +742,14 @@ class SalesAssistant:
             )
             for tour in tours[:3]
         )
+        items = tuple(item.to_dict() for item in build_tour_items(tours))
         return SalesReply(
             answer="\n\n".join(cards),
             kind="tour_selection",
             topic="tour",
             next_action=NextActionType.ASK_PREFERENCE,
             suggestions=suggestions,
-            items=reply.items,
+            items=items,
         )
 
     def _ask_which_tour(self, state: DialogueState) -> SalesReply:
