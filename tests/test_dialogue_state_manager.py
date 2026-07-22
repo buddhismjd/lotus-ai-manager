@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.sales_assistant.service import SalesAssistant
+from backend.sales_assistant.service import SalesAssistant, SalesReply
 from backend.sales_assistant.state import DialogueState, DialogueStateStore
 
 
@@ -106,3 +106,18 @@ def test_standalone_country_query_uses_country_collection(monkeypatch) -> None:
     assert reply.kind == "tour_collection"
     assert len(reply.items) == 1
     assert reply.items[0]["title"] == "Лапчи — место силы Миларепы"
+
+
+def test_dialogue_wrapper_preserves_collection_items() -> None:
+    assistant = SalesAssistant()
+    reply = assistant._with_dialogue(
+        SalesReply(
+            answer="Подборка готова.",
+            kind="product_collection",
+            topic="product",
+            items=({"id": "product-1", "title": "Статуя"},),
+        ),
+        "product_search",
+    )
+
+    assert reply.items == ({"id": "product-1", "title": "Статуя"},)

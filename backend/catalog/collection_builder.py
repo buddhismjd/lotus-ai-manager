@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any, Iterable
 
 from backend.catalog.models import Product
+from backend.catalog.collection_ranking import rank_collection
 from backend.catalog.product_intelligence import analyze_product, normalize
 from backend.catalog.product_profiles import get_product_profile
 from backend.catalog.repositories import ProductRepository
@@ -26,6 +27,10 @@ class CollectionItem:
     material: str | None = None
     size: str | None = None
     status: str = "published"
+    description: str | None = None
+    button_label: str = "Открыть товар"
+    group: str | None = None
+    item_type: str = "product"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -97,11 +102,13 @@ def _matches_product(product: Product, query: str) -> bool:
     return bool(requested_kind or requested_entities or requested_materials)
 
 
-def build_product_items(products: Iterable[Product]) -> list[CollectionItem]:
-    """Convert products into complete, deduplicated UI collection items."""
+def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
+    source = list(products) if products is not None else ProductRepository().list_all()
+    matched = [product for product in source if _matches_product(product, query)]
+
     items: list[CollectionItem] = []
     seen: set[str] = set()
-    for product in products:
+    for product in matched:
         identity = product.url or product.id
         if identity in seen:
             continue
@@ -118,14 +125,16 @@ def build_product_items(products: Iterable[Product]) -> list[CollectionItem]:
             ),
             material=product.material,
             size=_size(product),
+            description=(product.description or "").strip() or None,
+            button_label="Открыть товар",
+            group=(
+                "В наличии"
+                if product.available and (product.availability_status or "").casefold() not in {"под заказ", "нет в наличии"}
+                else "Под заказ"
+            ),
+            item_type="product",
         ))
-    return items
+    return rank_collection(query, items)
 
 
-def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
-    source = list(products) if products is not None else ProductRepository().list_all()
-    matched = [product for product in source if _matches_product(product, query)]
-    return build_product_items(matched)
-
-
-__all__ = ["CollectionItem", "build_product_collection", "build_product_items"]
+__all__ = ["CollectionItem", "build_product_collection"]

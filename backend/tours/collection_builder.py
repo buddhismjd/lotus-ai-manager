@@ -4,6 +4,7 @@ from dataclasses import asdict
 from typing import Any
 
 from backend.catalog.collection_builder import CollectionItem
+from backend.catalog.collection_ranking import rank_collection
 from backend.structured_catalog.models import StructuredTour
 from backend.structured_catalog.repositories import StructuredTourRepository
 from backend.tours.intelligence import COUNTRY_PATTERNS, normalize
@@ -18,33 +19,12 @@ def detect_country(query: str) -> str | None:
     return None
 
 
-def is_country_collection_query(query: str) -> bool:
-    """Return True when a query asks for a country-level tour collection."""
-    text = normalize(query)
-    country = detect_country(query)
-    if country is None:
-        return False
-
-    country_text = normalize(country)
-    if country_text not in text:
-        return False
-    if text == country_text:
-        return True
-
-    return any(
-        marker in text
-        for marker in (
-            "возите",
-            "есть поезд",
-            "есть тур",
-            "туры в",
-            "поездки в",
-            "путешествия в",
-            "что есть",
-            "покажите",
-            "покажи",
-        )
-    )
+def _tour_image(tour: StructuredTour) -> str | None:
+    for key in ("image_url", "hero_image", "cover_image"):
+        value = tour.metadata.get(key) if tour.metadata else None
+        if value:
+            return str(value)
+    return None
 
 
 def _published_item(tour: StructuredTour) -> CollectionItem:
@@ -59,12 +39,12 @@ def _published_item(tour: StructuredTour) -> CollectionItem:
         material=material,
         size=size,
         status=tour.status,
+        image_url=_tour_image(tour),
+        description=(tour.description or "").strip() or None,
+        button_label="Открыть тур",
+        group="Туры по направлению",
+        item_type="tour",
     )
-
-
-def build_tour_items(tours: list[StructuredTour]) -> list[CollectionItem]:
-    """Convert structured tours into serializable collection items."""
-    return [_published_item(tour) for tour in tours]
 
 
 def build_tour_collection(query: str) -> list[CollectionItem]:
@@ -77,9 +57,9 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
         if country in tour.countries
     ]
     if published:
-        return build_tour_items(published)
+        return rank_collection(query, [_published_item(tour) for tour in published])
 
-    return [
+    return rank_collection(query, [
         CollectionItem(
             id=f"planned-{tour.slug}",
             title=tour.title,
@@ -87,10 +67,14 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
             availability=tour.note,
             material=", ".join(tour.countries),
             status="planned",
+            description=tour.note,
+            button_label="Подробнее",
+            group="Готовящиеся путешествия",
+            item_type="tour",
         )
         for tour in PLANNED_TOURS
         if country in tour.countries
-    ]
+    ])
 
 
-__all__ = ["build_tour_collection", "build_tour_items", "detect_country", "is_country_collection_query"]
+__all__ = ["build_tour_collection", "detect_country"]

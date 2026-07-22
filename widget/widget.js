@@ -51,52 +51,80 @@
   const appendCollection = (items) => {
     if (!Array.isArray(items) || items.length === 0) return;
 
-    const collection = document.createElement("div");
-    collection.className = "ai-bodhi__collection";
-
+    const groups = new Map();
     items.forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "ai-bodhi__card";
-
-      if (item.image_url) {
-        const image = document.createElement("img");
-        image.className = "ai-bodhi__card-image";
-        image.src = item.image_url;
-        image.alt = item.title || "Товар";
-        image.loading = "lazy";
-        card.appendChild(image);
-      }
-
-      const body = document.createElement("div");
-      body.className = "ai-bodhi__card-body";
-
-      const title = document.createElement("div");
-      title.className = "ai-bodhi__card-title";
-      title.textContent = item.title || "Без названия";
-      body.appendChild(title);
-
-      [item.price, item.size, item.material, item.availability].filter(Boolean).forEach((value) => {
-        const meta = document.createElement("div");
-        meta.className = "ai-bodhi__card-meta";
-        meta.textContent = value;
-        body.appendChild(meta);
-      });
-
-      if (item.url) {
-        const link = document.createElement("a");
-        link.className = "ai-bodhi__card-link";
-        link.href = item.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = item.status === "planned" ? "Подробнее" : "Открыть";
-        body.appendChild(link);
-      }
-
-      card.appendChild(body);
-      collection.appendChild(card);
+      const label = item.group || "Подходящие варианты";
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(item);
     });
 
-    messages.appendChild(collection);
+    groups.forEach((groupItems, groupLabel) => {
+      const section = document.createElement("section");
+      section.className = "ai-bodhi__collection-section";
+
+      const heading = document.createElement("div");
+      heading.className = "ai-bodhi__collection-title";
+      heading.textContent = groupLabel;
+      section.appendChild(heading);
+
+      const collection = document.createElement("div");
+      collection.className = "ai-bodhi__collection";
+
+      groupItems.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "ai-bodhi__card";
+
+        if (item.image_url) {
+          const image = document.createElement("img");
+          image.className = "ai-bodhi__card-image";
+          image.src = item.image_url;
+          image.alt = item.title || "Карточка";
+          image.loading = "lazy";
+          card.appendChild(image);
+        }
+
+        const body = document.createElement("div");
+        body.className = "ai-bodhi__card-body";
+
+        const title = document.createElement("div");
+        title.className = "ai-bodhi__card-title";
+        title.textContent = item.title || "Без названия";
+        body.appendChild(title);
+
+        if (item.description) {
+          const description = document.createElement("div");
+          description.className = "ai-bodhi__card-description";
+          description.textContent = item.description;
+          body.appendChild(description);
+        }
+
+        [item.price, item.size, item.material, item.availability]
+          .filter(Boolean)
+          .forEach((value) => {
+            const meta = document.createElement("div");
+            meta.className = "ai-bodhi__card-meta";
+            meta.textContent = value;
+            body.appendChild(meta);
+          });
+
+        if (item.url) {
+          const link = document.createElement("a");
+          link.className = "ai-bodhi__card-link";
+          link.href = item.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = item.button_label || (item.item_type === "tour" ? "Открыть тур" : "Открыть товар");
+          body.appendChild(link);
+        }
+
+        card.appendChild(body);
+        collection.appendChild(card);
+      });
+
+      section.appendChild(collection);
+      messages.appendChild(section);
+    });
+
     messages.scrollTop = messages.scrollHeight;
   };
 

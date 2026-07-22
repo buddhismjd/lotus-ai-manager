@@ -66,3 +66,30 @@ def test_product_collection_prefers_structured_image_and_availability(monkeypatc
     assert len(items) == 1
     assert items[0].image_url == "https://img.test/catalog-white-tara.jpg"
     assert items[0].availability == "Под заказ"
+
+
+def test_collection_items_are_ranked_and_grouped() -> None:
+    products = [
+        Product(
+            id="tara-green",
+            title="Статуя Зелёной Тары",
+            url="https://example.com/green-tara",
+            description="Бронза, под заказ.",
+            available=False,
+        ),
+        Product(
+            id="tara-white",
+            title="Статуя Белой Тары",
+            url="https://example.com/white-tara",
+            description="Белая Тара, бронза.",
+            available=True,
+            image_url="https://example.com/white-tara.jpg",
+        ),
+    ]
+
+    items = build_product_collection("статуя Белой Тары", products)
+
+    assert [item.id for item in items] == ["tara-white"]
+    assert items[0].group == "В наличии"
+    assert items[0].button_label == "Открыть товар"
+    assert items[0].description == "Белая Тара, бронза."

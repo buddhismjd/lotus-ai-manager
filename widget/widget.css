@@ -259,3 +259,24 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+.ai-bodhi__collection-section {
+  margin-top: 12px;
+}
+
+.ai-bodhi__collection-title {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: #4d3d66;
+}
+
+.ai-bodhi__card-description {
+  display: -webkit-box;
+  margin-top: 6px;
+  overflow: hidden;
+  color: #655d70;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
