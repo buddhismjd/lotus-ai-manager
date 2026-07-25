@@ -242,7 +242,17 @@ class SalesAssistant:
                     f"По направлению «{country}» опубликованных программ пока нет, "
                     "но готовится следующее путешествие:"
                     if planned_only
-                    else f"Нашла путешествия по направлению «{country}»:"
+                    else (
+                        f"Нашла {len(tour_items)} "
+                        + (
+                            "путешествие"
+                            if len(tour_items) == 1
+                            else "путешествия"
+                            if 2 <= len(tour_items) <= 4
+                            else "путешествий"
+                        )
+                        + f" по направлению «{country}». Все варианты представлены ниже."
+                    )
                 )
                 return self._with_dialogue(
                     SalesReply(

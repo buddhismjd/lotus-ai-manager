@@ -49,7 +49,7 @@ def clean_tour_description(value: str | None) -> str | None:
 
 _QUERY_COUNTRY_ALIASES = {
     "Тибет": ("тибет", "тибетск"),
-    "Индия": ("индия", "индии", "индийск"),
+    "Индия": ("индия", "индии", "индию", "индийск"),
     "Бутан": ("бутан", "бутане", "бутанск"),
     "Непал": ("непал", "непале", "непальск"),
     "Япония": ("япония", "японии", "японск"),
@@ -66,6 +66,35 @@ def detect_country(query: str) -> str | None:
     return None
 
 
+def infer_tour_countries(tour: StructuredTour) -> tuple[str, ...]:
+    """Return every country supported by structured data or tour content.
+
+    Legacy catalog rows may not yet have ``countries`` populated.  Country
+    collections therefore use the shared intelligence vocabulary against the
+    complete searchable tour record instead of relying on a single title hit.
+    """
+    countries = list(tour.countries)
+    searchable = " ".join(
+        value
+        for value in (
+            tour.title,
+            tour.description,
+            tour.url or "",
+            " ".join(tour.regions),
+            " ".join(tour.destinations),
+            " ".join(tour.keywords),
+        )
+        if value
+    )
+    normalized = normalize(searchable)
+    for country, aliases in COUNTRY_PATTERNS.items():
+        if country in countries:
+            continue
+        if any(normalize(alias) in normalized for alias in aliases):
+            countries.append(country)
+    return tuple(countries)
+
+
 def _tour_image(tour: StructuredTour) -> str | None:
     for key in ("image_url", "hero_image", "cover_image", "og_image"):
         value = tour.metadata.get(key) if tour.metadata else None
@@ -78,7 +107,8 @@ def _tour_image(tour: StructuredTour) -> str | None:
 
 def _published_item(tour: StructuredTour) -> CollectionItem:
     date_text = tour.schedule.source_text if tour.schedule else None
-    material = ", ".join(tour.countries) if tour.countries else None
+    countries = infer_tour_countries(tour)
+    material = ", ".join(countries) if countries else None
     return CollectionItem(
         id=tour.id,
         title=tour.title,
@@ -101,24 +131,19 @@ def _published_item(tour: StructuredTour) -> CollectionItem:
 
 
 def build_tour_collection(query: str) -> list[CollectionItem]:
+    """Build the complete country collection without first-match truncation."""
     country = detect_country(query)
     if not country:
         return []
 
-    published = []
-    for tour in StructuredTourRepository().list_all():
-        countries = set(tour.countries)
-        if not countries:
-            searchable = " ".join([tour.title, tour.description, tour.url or ""])
-            detected = next((
-                label for label, aliases in COUNTRY_PATTERNS.items()
-                if any(normalize(alias) in normalize(searchable) for alias in aliases)
-            ), None)
-            if detected:
-                countries.add(detected)
-        if country in countries:
-            published.append(tour)
+    published = [
+        tour
+        for tour in StructuredTourRepository().list_all()
+        if country in infer_tour_countries(tour)
+    ]
     if published:
+        # rank_collection only orders the complete set; it never filters or
+        # limits it.  A country request must expose every matching programme.
         return rank_collection(query, [_published_item(tour) for tour in published])
 
     return rank_collection(query, [
@@ -139,4 +164,9 @@ def build_tour_collection(query: str) -> list[CollectionItem]:
     ])
 
 
-__all__ = ["build_tour_collection", "clean_tour_description", "detect_country"]
+__all__ = [
+    "build_tour_collection",
+    "clean_tour_description",
+    "detect_country",
+    "infer_tour_countries",
+]

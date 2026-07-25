@@ -1,0 +1,20 @@
+AI Bodhi — CATALOG-3.0
+
+Что исправлено:
+- запросы по стране возвращают все опубликованные туры страны;
+- «Что по Индии?» возвращает 3 карточки: Куллу, Маркха, Ладакх/Занскар;
+- добавлена форма «Индию»;
+- страна определяется по полному структурированному профилю тура;
+- ранжирование только меняет порядок и не обрезает коллекцию;
+- ответ сообщает количество найденных вариантов.
+
+Проверки из корня проекта:
+python -m pytest -q
+python tools\catalog_3_0\diagnostic.py
+python tools\catalog_3_0\smoke.py
+python tools\catalog_3_0\report.py
+
+Git после успешной проверки:
+git add backend\tours\collection_builder.py backend\sales_assistant\service.py tests\test_ux_1_0_tour_and_media.py tools\catalog_3_0 CATALOG-3.0-INSTALL.txt
+git commit -m "Implement CATALOG-3.0 complete country tour collections"
+git push origin main
