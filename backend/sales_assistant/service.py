@@ -195,7 +195,10 @@ class SalesAssistant:
         standalone_country = bool(
             country and normalised_query == self._normalise(country)
         )
-        explicit_country = country is not None and self._normalise(country) in normalised_query
+        # detect_country already handles grammatical forms such as "Индии".
+        # Comparing the canonical label ("Индия") with the raw query loses
+        # those requests and lets stale dialogue context win.
+        explicit_country = country is not None
         country_collection_request = explicit_country and (
             standalone_country or any(
             marker in normalised_query
@@ -207,17 +210,22 @@ class SalesAssistant:
                 "поездки в",
                 "путешествия в",
                 "что есть",
+                "что по",
+                "расскажи про",
+                "расскажите про",
                 "покажите",
                 "покажи",
             )
         )
         )
         if (
-            (topic == "tour" or standalone_country)
-            and country_collection_request
+            country_collection_request
             and decision.month is None
             and decision.strategy not in {"tour_price", "tour_date"}
         ):
+            # An explicitly named direction starts a new search and must never
+            # inherit a previously active tour (e.g. Nepal -> India).
+            state.clear_tour_context()
             tour_items = build_tour_collection(query)
             state.last_query = query
             state.topic = "tour"

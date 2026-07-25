@@ -164,6 +164,14 @@ class DialogueState:
         self.candidate_tour_ids = ()
         self.candidate_tour_titles = ()
 
+    def clear_tour_context(self) -> None:
+        """Forget a previously selected/listed tour before a new direction query."""
+        self.month = None
+        self.active_tour_id = None
+        self.active_title = None
+        self.active_url = None
+        self.clear_candidates()
+
 
 class DialogueStateStore:
     """Thread-safe in-memory state store keyed by chat session."""

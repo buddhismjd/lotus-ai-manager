@@ -41,8 +41,9 @@ def test_follow_up_price_uses_active_tour() -> None:
     assert details.topic == "tour"
     assert price.kind == "tour_price"
     assert "Кайлас" in price.answer
-    assert "не опубликована" in price.answer
-    assert price.needs_manager is True
+    assert "1450" in price.answer
+    assert "USD" in price.answer
+    assert price.needs_manager is False
 
 
 def test_ambiguous_follow_up_after_multiple_tours_asks_which_one() -> None:
@@ -121,3 +122,49 @@ def test_dialogue_wrapper_preserves_collection_items() -> None:
     )
 
     assert reply.items == ({"id": "product-1", "title": "Статуя"},)
+
+
+def test_new_country_query_resets_previous_tour_context(monkeypatch) -> None:
+    from backend.catalog.collection_builder import CollectionItem
+    import backend.sales_assistant.service as service_module
+
+    captured: list[str] = []
+
+    def fake_collection(query: str):
+        captured.append(query)
+        if "инд" in query.casefold():
+            return [
+                CollectionItem(
+                    id="india-tour",
+                    title="Индия — Ладакх",
+                    url="https://example.com/india",
+                    material="Индия",
+                )
+            ]
+        return [
+            CollectionItem(
+                id="nepal-tour",
+                title="Непал — Муктинатх",
+                url="https://example.com/nepal",
+                material="Непал",
+            )
+        ]
+
+    monkeypatch.setattr(service_module, "build_tour_collection", fake_collection)
+    assistant = SalesAssistant()
+
+    assistant.reply("Какие туры в Непал?", "country-switch")
+    state = assistant._states.get("country-switch")
+    state.active_tour_id = "nepal-tour"
+    state.active_title = "Непал — Муктинатх"
+    state.active_url = "https://example.com/nepal"
+
+    reply = assistant.reply("Что по Индии?", "country-switch")
+
+    assert captured[-1] == "Что по Индии?"
+    assert reply.kind == "tour_collection"
+    assert len(reply.items) == 1
+    assert reply.items[0]["title"] == "Индия — Ладакх"
+    state = assistant._states.get("country-switch")
+    assert state.active_tour_id is None
+    assert state.active_title is None
