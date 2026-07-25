@@ -62,6 +62,7 @@ class DialogueState:
     stage: DialogueStage = DialogueStage.DISCOVERY
     last_query: str = ""
     month: int | None = None
+    active_tour_id: str | None = None
     active_title: str | None = None
     active_url: str | None = None
     candidate_tour_ids: tuple[str, ...] = ()
@@ -82,12 +83,14 @@ class DialogueState:
         self.month = month
         self.candidate_tour_ids = tuple(tour.id for tour in tours)
         self.candidate_tour_titles = tuple(tour.title for tour in tours)
+        self.active_tour_id = tours[0].id if len(tours) == 1 else None
         self.active_title = tours[0].title if len(tours) == 1 else None
         self.active_url = tours[0].url if len(tours) == 1 else None
 
     def remember_active_tour(self, tour: StructuredTour) -> None:
         self.topic = "tour"
         self.goal = "tour_details"
+        self.active_tour_id = tour.id
         self.active_title = tour.title
         self.active_url = tour.url
 
@@ -186,6 +189,7 @@ class DialogueStateStore:
                 stage=state.stage,
                 last_query=state.last_query,
                 month=state.month,
+                active_tour_id=state.active_tour_id,
                 active_title=state.active_title,
                 active_url=state.active_url,
                 candidate_tour_ids=state.candidate_tour_ids,

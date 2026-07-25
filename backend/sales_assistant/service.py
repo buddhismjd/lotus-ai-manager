@@ -223,6 +223,13 @@ class SalesAssistant:
             state.topic = "tour"
             if tour_items:
                 planned_only = all(item.status == "planned" for item in tour_items)
+                published_tours = [
+                    tour
+                    for tour in self._tours.list_all()
+                    if tour.id in {item.id for item in tour_items}
+                ]
+                if published_tours:
+                    state.remember_tour_list(published_tours, month=None)
                 answer = (
                     f"По направлению «{country}» опубликованных программ пока нет, "
                     "но готовится следующее путешествие:"
@@ -301,12 +308,31 @@ class SalesAssistant:
 
         matched_title = getattr(route, "matched_title", None)
         matched_url = getattr(route, "matched_url", None)
-        matched_tour = self._find_structured_tour(matched_title, matched_url)
+
+        # A follow-up action belongs to the tour explicitly selected in this
+        # dialogue.  Route matching may otherwise pick another tour that shares
+        # the same country (for example, another Nepal journey).
+        matched_tour = None
+        if topic == "tour" and self._is_follow_up(query):
+            matched_tour = self._resolve_tour_from_state(query, state)
+        if matched_tour is None:
+            matched_tour = self._find_structured_tour(matched_title, matched_url)
         if matched_tour is None and topic == "tour":
             matched_tour = self._resolve_tour_from_state(query, state)
 
         if matched_tour is not None:
             state.remember_active_tour(matched_tour)
+
+        if (
+            matched_tour is not None
+            and decision.strategy == "tour_details"
+            and self._asks_for_program(query)
+        ):
+            state.last_query = query
+            return self._with_dialogue(
+                self._tour_program_reply(matched_tour),
+                decision.strategy,
+            )
 
         if decision.strategy == "tour_price" and matched_tour is not None:
             state.last_query = query
@@ -779,6 +805,27 @@ class SalesAssistant:
         )
 
     @staticmethod
+    def _tour_program_reply(tour: StructuredTour) -> SalesReply:
+        description = (tour.description or "").strip()
+        if not description:
+            description = (
+                f"Подробная программа путешествия «{tour.title}» пока не опубликована. "
+                "Я могу сохранить Ваш интерес и передать вопрос менеджеру."
+            )
+            needs_manager = True
+        else:
+            description = f"Программа путешествия «{tour.title}»:\n\n{description}"
+            needs_manager = False
+        return SalesReply(
+            answer=description,
+            kind="tour",
+            topic="tour",
+            title=tour.title,
+            url=tour.url,
+            needs_manager=needs_manager,
+        )
+
+    @staticmethod
     def _tour_price_reply(tour: StructuredTour) -> SalesReply:
         if tour.price is None:
             return SalesReply(
@@ -791,8 +838,9 @@ class SalesAssistant:
                 url=tour.url,
                 needs_manager=True,
             )
+        prefix = "от " if tour.metadata.get("price_is_from") else ""
         return SalesReply(
-            answer=f"Стоимость путешествия «{tour.title}» составляет {tour.price} {tour.currency}.",
+            answer=f"Стоимость путешествия «{tour.title}» — {prefix}{tour.price} {tour.currency}.",
             kind="tour_price",
             topic="tour",
             title=tour.title,
@@ -862,8 +910,12 @@ class SalesAssistant:
         query: str,
         state: DialogueState,
     ) -> StructuredTour | None:
-        if state.active_url or state.active_title:
-            active = self._find_structured_tour(state.active_title, state.active_url)
+        if state.active_tour_id or state.active_url or state.active_title:
+            active = self._find_structured_tour(
+                state.active_title,
+                state.active_url,
+                tour_id=state.active_tour_id,
+            )
             if active is not None and self._is_follow_up(query):
                 return active
 
@@ -879,8 +931,12 @@ class SalesAssistant:
         self,
         title: str | None,
         url: str | None,
+        *,
+        tour_id: str | None = None,
     ) -> StructuredTour | None:
         for tour in self._tours.list_all():
+            if tour_id and tour.id == tour_id:
+                return tour
             if url and tour.url == url:
                 return tour
             if title and tour.title == title:
@@ -917,6 +973,11 @@ class SalesAssistant:
                 "подходящий тур",
             )
         )
+
+    @classmethod
+    def _asks_for_program(cls, query: str) -> bool:
+        lowered = cls._normalise(query)
+        return any(marker in lowered for marker in ("программ", "что входит", "маршрут"))
 
     @classmethod
     def _is_ambiguous_tour_follow_up(cls, query: str) -> bool:
