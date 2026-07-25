@@ -760,8 +760,6 @@ class SalesAssistant:
             facts = [f"🗻 {tour.title}"]
             if tour.schedule and tour.schedule.source_text:
                 facts.append(f"📅 {tour.schedule.source_text}")
-            if tour.duration_days:
-                facts.append(f"⏱ {tour.duration_days} дней")
             if tour.countries:
                 facts.append(f"📍 {', '.join(tour.countries)}")
             cards.append("\n".join(facts))

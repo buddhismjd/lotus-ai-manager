@@ -149,7 +149,6 @@ def _format_tour(response: BuiltResponse) -> BuiltResponse:
     description = tour.description if tour else response.text
     lines = _source_lines(description)
     date_text = _extract_date(lines)
-    duration = _extract_duration(title, lines, tour.duration_days if tour else None)
     summary = _short_summary(lines, title=title)
     url = response.url or (tour.url if tour else None)
 
@@ -157,14 +156,13 @@ def _format_tour(response: BuiltResponse) -> BuiltResponse:
     facts: list[str] = []
     if date_text:
         facts.append(f"📅 {date_text}")
-    if duration:
-        facts.append(f"⏱ {duration} дней")
     if tour and tour.country:
         facts.append(f"📍 {tour.country}")
     if tour:
         price = _money(tour.price, tour.currency)
         if price:
-            facts.append(f"💳 {price}")
+            prefix = "от " if tour.metadata.get("price_is_from") else ""
+            facts.append(f"💳 {prefix}{price}")
     if facts:
         blocks.append("\n".join(facts))
     if summary:
@@ -191,7 +189,15 @@ def _format_product(response: BuiltResponse) -> BuiltResponse:
         price = _money(product.price, product.currency)
         if price:
             facts.append(f"💳 {price}")
-        facts.append("✅ В наличии" if product.available else "⏳ Наличие уточняется")
+        stock = (product.availability_status or "").strip().casefold()
+        if stock == "в наличии":
+            facts.append("✅ В наличии")
+        elif stock == "нет в наличии":
+            facts.append("Нет в наличии")
+        elif stock == "под заказ":
+            facts.append("Под заказ")
+        else:
+            facts.append("⏳ Наличие уточняется")
         if product.material:
             facts.append(f"Материал: {product.material}")
     if facts:
@@ -251,12 +257,9 @@ def format_tour_list(
         lines = _source_lines(tour.description)
         schedule = getattr(tour, "schedule", None)
         date_text = schedule.source_text if schedule else _extract_date(lines)
-        duration = _extract_duration(tour.title, lines, tour.duration_days)
         card = [f"🗻 {tour.title}"]
         if date_text:
             card.append(f"📅 {date_text}")
-        if duration:
-            card.append(f"⏱ {duration} дней")
         if tour.country:
             card.append(f"📍 {tour.country}")
         cards.append("\n".join(card))

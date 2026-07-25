@@ -59,11 +59,6 @@ class SalesDialogueManager:
                 next_action=NextActionType.ASK_PREFERENCE,
                 suggestions=(
                     DialogueSuggestion(
-                        NextActionType.SHOW_TOUR_DETAILS,
-                        "Рассказать о Кайласе",
-                        "Расскажите подробнее про тур на Кайлас",
-                    ),
-                    DialogueSuggestion(
                         NextActionType.TRANSFER_MANAGER,
                         "Помочь с выбором",
                         "Помогите подобрать подходящий тур",
@@ -111,18 +106,8 @@ class SalesDialogueManager:
 
         if topic == "tour":
             return DialoguePlan(
-                next_action=NextActionType.SHOW_PROGRAM,
+                next_action=NextActionType.LEAVE_CONTACT,
                 suggestions=(
-                    DialogueSuggestion(
-                        NextActionType.SHOW_PROGRAM,
-                        "Программа",
-                        f"Что входит в программу тура {subject}?",
-                    ),
-                    DialogueSuggestion(
-                        NextActionType.SHOW_PRICE,
-                        "Стоимость",
-                        f"Сколько стоит тур {subject}?",
-                    ),
                     DialogueSuggestion(
                         NextActionType.LEAVE_CONTACT,
                         "Оставить заявку",

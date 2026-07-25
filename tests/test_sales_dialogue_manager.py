@@ -14,10 +14,9 @@ def test_tour_list_offers_typed_next_actions() -> None:
     reply = SalesAssistant().reply("Какие есть туры в сентябре?", "sdm-list")
 
     assert reply.next_action == NextActionType.ASK_PREFERENCE
-    assert {suggestion.action for suggestion in reply.suggestions} >= {
-        NextActionType.SHOW_TOUR_DETAILS,
-        NextActionType.TRANSFER_MANAGER,
-    }
+    labels = {suggestion.label for suggestion in reply.suggestions}
+    assert "Помочь с выбором" in labels
+    assert "Рассказать о Кайласе" not in labels
 
 
 def test_missing_tour_price_is_honest_and_requests_manager(monkeypatch) -> None:
@@ -52,7 +51,7 @@ def test_missing_tour_price_is_honest_and_requests_manager(monkeypatch) -> None:
     assert reply.next_action == NextActionType.LEAVE_CONTACT
 
 
-def test_tour_details_offer_program_price_and_application(monkeypatch) -> None:
+def test_tour_details_do_not_offer_program_or_price(monkeypatch) -> None:
     route = type(
         "Route",
         (),
@@ -73,7 +72,9 @@ def test_tour_details_offer_program_price_and_application(monkeypatch) -> None:
     reply = SalesAssistant().reply("Расскажите про Кайлас", "sdm-details")
 
     labels = {suggestion.label for suggestion in reply.suggestions}
-    assert {"Программа", "Стоимость", "Оставить заявку"} <= labels
+    assert "Оставить заявку" in labels
+    assert "Программа" not in labels
+    assert "Стоимость" not in labels
 
 
 def test_psychologist_dialogue_offers_booking() -> None:

@@ -53,7 +53,7 @@ def test_tour_formatter_removes_page_navigation_and_route(monkeypatch) -> None:
     assert "Путешествия\nМагазин" not in response.text
     assert "День 0" not in response.text
     assert "22 сентября – 9 октября" in response.text
-    assert "⏱ 18 дней" in response.text
+    assert "⏱ 18 дней" not in response.text
     assert "**" not in response.text
 
 
