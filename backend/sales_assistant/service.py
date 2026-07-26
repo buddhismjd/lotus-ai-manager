@@ -5,6 +5,7 @@ from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
 from backend.catalog.collection_builder import build_product_collection
+from backend.catalog.commercial_cards import commercial_cards
 from backend.tours.collection_builder import build_tour_collection, detect_country
 from backend.sales_assistant.dialogue import (
     DialogueSuggestion,
@@ -235,7 +236,7 @@ class SalesAssistant:
                         answer=answer,
                         kind="product_collection",
                         topic="product",
-                        items=tuple(item.to_dict() for item in product_items),
+                        items=commercial_cards(product_items),
                     ),
                     decision.strategy,
                 )
@@ -315,7 +316,7 @@ class SalesAssistant:
                         answer=answer,
                         kind="tour_collection",
                         topic="tour",
-                        items=tuple(item.to_dict() for item in tour_items),
+                        items=commercial_cards(tour_items),
                         needs_manager=planned_only,
                     ),
                     "tour_list",
@@ -864,7 +865,7 @@ class SalesAssistant:
             title=request.aspect or request.category_label.capitalize(),
             next_action=NextActionType.ARTISAN_SELECTION,
             suggestions=tuple(suggestions),
-            items=tuple(item.to_dict() for item in product_items),
+            items=commercial_cards(product_items),
         )
 
     def _handle_artisan_selection(

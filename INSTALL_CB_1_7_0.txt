@@ -1,0 +1,13 @@
+CB-1.7.0 — Commercial Card Contract
+
+1. Распакуйте архив.
+2. Скопируйте все папки и файлы из архива в корень проекта:
+   D:\Lotus-AI-Manager-v0.5
+3. Согласитесь на замену файлов.
+4. Активируйте окружение:
+   .venv\Scripts\activate.bat
+5. Запустите проверки:
+   python -m pytest -q
+   python tools\cb_1_7_0_diagnostics.py
+   python tools\cb_1_7_0_smoke.py
+   python tools\cb_1_7_0_report.py

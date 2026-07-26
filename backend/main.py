@@ -11,6 +11,7 @@ from backend.config import (AI_PROVIDER, CORS_ALLOWED_ORIGINS, CORS_ALLOW_LOCALH
 from backend.services.ai_service import chat
 from backend.rag.dynamic_query_router import route_query
 from backend.catalog.collection_builder import build_product_collection
+from backend.catalog.commercial_cards import commercial_card
 from backend.tours.collection_builder import build_tour_collection, detect_country
 from backend.services.bodhi_service import answer_query
 from backend.services.dashboard_service import get_dashboard_data
@@ -150,13 +151,13 @@ async def api_bodhi_chat(payload: dict) -> JSONResponse:
     try:
         route = route_query(message)
         if route.intent == "product":
-            items = [item.to_dict() for item in build_product_collection(message)]
+            items = [commercial_card(item) for item in build_product_collection(message)]
             if items:
                 count = len(items)
                 answer = f"Нашла {count} подходящих " + ("товар." if count == 1 else "товара." if count < 5 else "товаров.")
                 kind = "product_collection"
         elif route.intent == "tour" and detect_country(message):
-            items = [item.to_dict() for item in build_tour_collection(message)]
+            items = [commercial_card(item) for item in build_tour_collection(message)]
             if items:
                 country = detect_country(message)
                 planned_only = all(item.get("status") == "planned" for item in items)
@@ -191,7 +192,7 @@ def chat_ui() -> str:
     <script>
     async function sendMessage(value){const input=document.getElementById('message');const text=(value||input.value).trim();if(!text)return;clearSuggestions();addMessage(text,'user');input.value='';addMessage('Думаю...','bot');try{const r=await fetch('/api/sales/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,session_id:'local-chat-ui'})});const d=await r.json();const m=document.getElementById('messages');m.lastChild.textContent=d.answer;showItems(d.items||[]);showSuggestions(d.suggestions||[]);m.scrollTop=m.scrollHeight}catch(e){document.getElementById('messages').lastChild.textContent='Не удалось получить ответ. Проверьте сервер.'}}
     function addMessage(text,cls){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
-    function showItems(items){if(!items.length)return;const m=document.getElementById('messages');const collection=document.createElement('div');collection.className='collection';items.forEach(item=>{const card=document.createElement('article');card.className='item-card';if(item.image_url){const img=document.createElement('img');img.src=item.image_url;img.alt=item.title||'Товар';img.loading='lazy';card.appendChild(img)}const body=document.createElement('div');body.className='item-body';const title=document.createElement('div');title.className='item-title';title.textContent=item.title||'Без названия';body.appendChild(title);[item.price,item.size,item.material,item.availability].filter(Boolean).forEach(value=>{const meta=document.createElement('div');meta.className='item-meta';meta.textContent=value;body.appendChild(meta)});if(item.url){const link=document.createElement('a');link.className='item-link';link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=item.status==='planned'?'Подробнее':'Открыть товар';body.appendChild(link)}card.appendChild(body);collection.appendChild(card)});m.appendChild(collection)}
+    function showItems(items){if(!items.length)return;const m=document.getElementById('messages');const collection=document.createElement('div');collection.className='collection';items.forEach(item=>{const card=document.createElement('article');card.className='item-card';if(item.image_url){const img=document.createElement('img');img.src=item.image_url;img.alt=item.title||'Предложение';img.loading='lazy';card.appendChild(img)}const body=document.createElement('div');body.className='item-body';const title=document.createElement('div');title.className='item-title';title.textContent=item.title||'Без названия';body.appendChild(title);[item.price,item.availability].filter(Boolean).forEach(value=>{const meta=document.createElement('div');meta.className='item-meta';meta.textContent=value;body.appendChild(meta)});if(item.url){const link=document.createElement('a');link.className='item-link';link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=item.button_label||'Открыть';body.appendChild(link)}card.appendChild(body);collection.appendChild(card)});m.appendChild(collection)}
     function clearSuggestions(){document.querySelectorAll('.suggestions').forEach(x=>x.remove())}
     function showSuggestions(items){if(!items.length)return;const m=document.getElementById('messages');const box=document.createElement('div');box.className='suggestions';items.forEach(item=>{const b=document.createElement('button');b.className='suggestion';b.textContent=item.label;b.onclick=()=>sendMessage(item.message);box.appendChild(b)});m.appendChild(box)}
     </script>

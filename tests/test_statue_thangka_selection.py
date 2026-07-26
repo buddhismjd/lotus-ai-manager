@@ -172,7 +172,10 @@ def test_selection_reply_returns_every_matching_product_as_complete_card() -> No
     assert len(reply.items) == 2
     assert [item["id"] for item in reply.items] == ["tara-1", "tara-2"]
     assert all(item["image_url"] for item in reply.items)
-    assert reply.items[0]["material"] == "Латунь"
-    assert reply.items[0]["size"] == "высота 18 см"
+    assert "material" not in reply.items[0]
+    assert "size" not in reply.items[0]
+    assert "description" not in reply.items[0]
+    assert reply.items[0]["price"] == "Цена уточняется"
     assert reply.items[0]["availability"] == "В наличии"
+    assert reply.items[0]["button_label"] == "Открыть товар"
     assert reply.items[1]["availability"] == "Под заказ"

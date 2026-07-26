@@ -1,0 +1,6 @@
+print("CB-1.7.0 — Commercial Card Contract")
+print("product=photo + title + price + status + open page")
+print("tour=photo + title + dates + price + open page")
+print("descriptions=excluded from chat cards")
+print("lead_button=excluded from commercial cards")
+print("rendering=deterministic, independent from LLM wording")

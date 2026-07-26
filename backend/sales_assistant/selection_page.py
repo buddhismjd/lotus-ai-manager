@@ -7,6 +7,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import HTMLResponse
 
 from backend.catalog.models import Product
+from backend.catalog.collection_builder import _price
 from backend.sales_assistant.product_selection import (
     ProductSelectionRequest,
     ProductSelectionService,
@@ -52,18 +53,9 @@ def _render_product_card(
     product: Product,
     service: ProductSelectionService,
 ) -> str:
-    dimensions = service.heights_for(product)
-    height = (
-        f"<div class='meta-row'>Высота: {dimensions[0]:g} см</div>"
-        if dimensions
-        else "<div class='meta-row'>Высота: не указана</div>"
-    )
-    material = (
-        f"<div class='meta-row'>Материал: {escape(product.material)}</div>"
-        if product.material
-        else "<div class='meta-row'>Материал: не указан</div>"
-    )
-    status = escape(product.availability_status) if product.availability_status else ""
+    del service  # Rendering is governed by the commercial card contract.
+    price = _price(product.price, product.currency) or "Цена уточняется"
+    status = product.availability_status or "Наличие уточняется"
     if product.image_url:
         image = (
             f"<img class='product-image' src='{escape(product.image_url)}' "
@@ -77,9 +69,10 @@ def _render_product_card(
         f"{image}"
         "<div class='card-body'>"
         f"<div class='title'>{escape(product.title)}</div>"
-        f"<div class='meta'>{height}{material}"
-        + (f"<div class='meta-row status'>{status}</div>" if status else "")
-        + "</div>"
+        "<div class='meta'>"
+        f"<div class='meta-row'>{escape(price)}</div>"
+        f"<div class='meta-row status'>{escape(status)}</div>"
+        "</div>"
         f"<a class='button' href='{escape(product.url)}' target='_blank' rel='noopener noreferrer'>Открыть товар</a>"
         "</div></article>"
     )
