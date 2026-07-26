@@ -3,8 +3,10 @@ from __future__ import annotations
 from html import escape
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Query
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from backend.api_errors import validation_error_response
 from backend.config import AI_PROVIDER, EMAIL_TO, OLLAMA_MODEL, SITE_URL
 from backend.services.ai_service import chat
 from backend.rag.dynamic_query_router import route_query
@@ -18,6 +20,7 @@ from backend.sales_assistant.api import router as sales_router
 from backend.widget_integration import router as widget_router
 
 app = FastAPI(title="Lotus AI Manager", version="0.7.0")
+app.add_exception_handler(RequestValidationError, validation_error_response)
 app.include_router(sales_router)
 app.include_router(widget_router)
 app.add_middleware(

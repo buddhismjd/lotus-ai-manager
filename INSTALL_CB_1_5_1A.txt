@@ -1,0 +1,14 @@
+CB-1.5.1A — API Security Foundation
+
+1. Copy the archive contents into the project root:
+   D:\Lotus-AI-Manager-v0.5
+2. Allow folders to merge and files to be replaced.
+3. Run:
+
+.venv\Scripts\activate.bat
+python -m pytest -q
+python tools\cb_1_5_1a_diagnostics.py
+python tools\cb_1_5_1a_smoke.py
+python tools\cb_1_5_1a_report.py
+
+Do not commit or push until all checks pass.

@@ -1,8 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Path
 from fastapi.responses import JSONResponse
 
+from backend.sales_assistant.api_models import (
+    MAX_SESSION_ID_LENGTH,
+    SESSION_ID_PATTERN,
+    SalesChatRequest,
+    SalesResetRequest,
+)
 from backend.sales_assistant.service import get_sales_assistant
 from backend.sales_assistant.selection_page import router as selection_router
 from backend.sales_assistant.product_media import router as product_media_router
@@ -13,9 +21,9 @@ router.include_router(product_media_router)
 
 
 @router.post("/chat")
-async def sales_chat(payload: dict) -> JSONResponse:
-    message = str(payload.get("message") or "").strip()
-    session_id = str(payload.get("session_id") or "default").strip() or "default"
+async def sales_chat(payload: SalesChatRequest) -> JSONResponse:
+    message = payload.message
+    session_id = payload.session_id
     reply = get_sales_assistant().reply(message, session_id)
     return JSONResponse({
         "answer": reply.answer,
@@ -45,8 +53,17 @@ async def sales_chat(payload: dict) -> JSONResponse:
 
 
 @router.get("/session/{session_id}")
-async def sales_session(session_id: str) -> JSONResponse:
-    session_key = session_id.strip() or "default"
+async def sales_session(
+    session_id: Annotated[
+        str,
+        Path(
+            min_length=1,
+            max_length=MAX_SESSION_ID_LENGTH,
+            pattern=SESSION_ID_PATTERN,
+        ),
+    ],
+) -> JSONResponse:
+    session_key = session_id
     session = get_sales_assistant().session(session_key)
     return JSONResponse({
         "session_id": session.session_id,
@@ -65,7 +82,7 @@ async def sales_session(session_id: str) -> JSONResponse:
 
 
 @router.post("/reset")
-async def reset_sales_chat(payload: dict) -> JSONResponse:
-    session_id = str(payload.get("session_id") or "default").strip() or "default"
+async def reset_sales_chat(payload: SalesResetRequest) -> JSONResponse:
+    session_id = payload.session_id
     get_sales_assistant().reset(session_id)
     return JSONResponse({"status": "reset", "session_id": session_id})
