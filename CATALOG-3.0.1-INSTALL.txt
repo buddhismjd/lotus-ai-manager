@@ -1,0 +1,10 @@
+AI Bodhi — CATALOG-3.0.1
+
+Changes:
+- catalog diagnostic, smoke and report tools now run both directly and with python -m;
+- added CHECK_ALL.bat for one-command regression and release checks;
+- no catalog behavior changes.
+
+Install:
+1. Extract this archive into D:\Lotus-AI-Manager-v0.5 with file replacement.
+2. Run CHECK_ALL.bat from the project root.
