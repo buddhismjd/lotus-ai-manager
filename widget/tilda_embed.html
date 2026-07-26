@@ -1,13 +1,31 @@
-<!-- AI Бодхи: вставить в блок T123. Заменить YOUR-API-DOMAIN на HTTPS-домен backend. -->
+<!-- AI Бодхи для Tilda: вставить в блок T123. Заменить YOUR-API-DOMAIN на HTTPS-домен backend. -->
 <link rel="stylesheet" href="https://YOUR-API-DOMAIN/widget/widget.css">
 <div id="ai-bodhi-widget" class="ai-bodhi">
-  <button id="ai-bodhi-toggle" class="ai-bodhi__toggle" type="button" aria-label="Открыть чат AI Бодхи" aria-expanded="false"><span class="ai-bodhi__lotus" aria-hidden="true">✦</span></button>
-  <section id="ai-bodhi-panel" class="ai-bodhi__panel" aria-label="Чат AI Бодхи" hidden>
-    <header class="ai-bodhi__header"><div><div class="ai-bodhi__title">AI Бодхи</div><div class="ai-bodhi__subtitle">Помощник «Света Лотоса»</div></div><button id="ai-bodhi-close" class="ai-bodhi__close" type="button" aria-label="Закрыть чат">×</button></header>
-    <div id="ai-bodhi-messages" class="ai-bodhi__messages"><div class="ai-bodhi__message ai-bodhi__message--assistant">Добрый день! Буду рада помочь! Подобрать путешествие или товар? Записать на бесплатную консультацию психолога-буддолога?</div></div>
-    <div id="ai-bodhi-typing" class="ai-bodhi__typing" hidden>AI Бодхи отвечает…</div>
-    <form id="ai-bodhi-form" class="ai-bodhi__form"><textarea id="ai-bodhi-input" class="ai-bodhi__input" rows="1" placeholder="Напишите ваш вопрос" aria-label="Ваш вопрос" required></textarea><button id="ai-bodhi-send" class="ai-bodhi__send" type="submit">Отправить</button></form>
+  <button id="ai-bodhi-toggle" class="ai-bodhi__toggle" type="button" aria-label="Открыть помощника Света Лотоса" aria-expanded="false">
+    <span class="ai-bodhi__lotus" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M32 53c-7-9-9-18 0-32 9 14 7 23 0 32Z" stroke="currentColor" stroke-width="3"/><path d="M30 53c-12-4-18-11-17-25 12 5 18 13 17 25Z" stroke="currentColor" stroke-width="3"/><path d="M34 53c12-4 18-11 17-25-12 5-18 13-17 25Z" stroke="currentColor" stroke-width="3"/><path d="M18 49c-8-1-13-5-15-14 9 1 15 6 18 14M46 49c8-1 13-5 15-14-9 1-15 6-18 14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+    <span id="ai-bodhi-badge" class="ai-bodhi__badge" hidden>1</span>
+  </button>
+  <section id="ai-bodhi-panel" class="ai-bodhi__panel" aria-label="Чат-помощник Света Лотоса" hidden>
+    <header class="ai-bodhi__header">
+      <div class="ai-bodhi__identity">
+        <span class="ai-bodhi__avatar" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M32 53c-7-9-9-18 0-32 9 14 7 23 0 32Z" stroke="currentColor" stroke-width="3"/><path d="M30 53c-12-4-18-11-17-25 12 5 18 13 17 25ZM34 53c12-4 18-11 17-25-12 5-18 13-17 25Z" stroke="currentColor" stroke-width="3"/></svg></span>
+        <div class="ai-bodhi__heading"><div class="ai-bodhi__title">Бодхи</div><div class="ai-bodhi__subtitle">Помощник «Света Лотоса»</div><div class="ai-bodhi__online">На связи</div></div>
+      </div>
+      <div class="ai-bodhi__header-actions"><button id="ai-bodhi-reset" class="ai-bodhi__reset" type="button" title="Начать новый диалог" aria-label="Начать новый диалог">↻</button><button id="ai-bodhi-close" class="ai-bodhi__close" type="button" aria-label="Закрыть чат">×</button></div>
+    </header>
+    <div id="ai-bodhi-messages" class="ai-bodhi__messages" aria-live="polite">
+      <div class="ai-bodhi__message ai-bodhi__message--assistant ai-bodhi__welcome"><span class="ai-bodhi__welcome-title">Здравствуйте!</span>Помогу выбрать путешествие, найти товар из Непала и Тибета или узнать о консультации психолога-буддолога.</div>
+      <div class="ai-bodhi__quick-actions" data-bodhi-quick-actions><button class="ai-bodhi__suggestion" type="button" data-message="Покажите путешествия">Путешествия</button><button class="ai-bodhi__suggestion" type="button" data-message="Покажите товары">Магазин</button><button class="ai-bodhi__suggestion" type="button" data-message="Расскажите о консультации психолога-буддолога">Консультация</button></div>
+    </div>
+    <div id="ai-bodhi-typing" class="ai-bodhi__typing" hidden><span class="ai-bodhi__typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>Бодхи отвечает</div>
+    <form id="ai-bodhi-form" class="ai-bodhi__form"><textarea id="ai-bodhi-input" class="ai-bodhi__input" rows="1" placeholder="Напишите ваш вопрос…" aria-label="Ваш вопрос" required></textarea><button id="ai-bodhi-send" class="ai-bodhi__send" type="submit" aria-label="Отправить сообщение"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 4 16 8-16 8 3-8-3-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12h13" stroke="currentColor" stroke-width="1.8"/></svg></button></form>
+    <div class="ai-bodhi__footer-note">Ответы основаны на информации сайта «Свет Лотоса»</div>
   </section>
 </div>
-<script>window.AI_BODHI_API_URL="https://YOUR-API-DOMAIN/api/sales/chat";</script>
+
+<script>
+window.AI_BODHI_API_URL="https://YOUR-API-DOMAIN/api/sales/chat";
+window.AI_BODHI_SESSION_URL="https://YOUR-API-DOMAIN/api/sales/session";
+window.AI_BODHI_RESET_URL="https://YOUR-API-DOMAIN/api/sales/reset";
+</script>
 <script src="https://YOUR-API-DOMAIN/widget/widget.js" defer></script>

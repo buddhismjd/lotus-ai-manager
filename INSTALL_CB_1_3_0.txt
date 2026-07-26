@@ -1,0 +1,11 @@
+CB-1.3.0 — Live Widget Integration
+
+Copy the archive contents into the project root and allow file replacement.
+
+Checks:
+python -m pytest -q
+python tools\cb_1_3_0_diagnostics.py
+python tools\cb_1_3_0_smoke.py
+python tools\cb_1_3_0_report.py
+
+Do not publish widget/tilda_embed.html to Tilda until an HTTPS backend domain exists.

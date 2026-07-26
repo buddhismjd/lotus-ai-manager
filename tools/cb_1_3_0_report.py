@@ -1,0 +1,7 @@
+print("CB-1.3.0 — Live Widget Integration")
+print("design=Svet Lotosa navy, sky and ivory")
+print("desktop=floating panel")
+print("mobile=full-screen adaptive panel")
+print("session=restore and reset")
+print("catalog=horizontal rich cards")
+print("tilda=production embed template")
