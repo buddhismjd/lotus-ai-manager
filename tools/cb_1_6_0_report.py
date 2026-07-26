@@ -1,0 +1,5 @@
+print("CB-1.6.0 — Aspect-Centered Product Discovery")
+print("aspect_search=returns all matching products across categories")
+print("combined_facets=aspect plus explicit product type narrows results")
+print("cards=preserve category and image metadata")
+print("architecture=generic semantic and lexical facets without query-specific branches")

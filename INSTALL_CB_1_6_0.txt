@@ -1,0 +1,11 @@
+CB-1.6.0 — Aspect-Centered Product Discovery
+
+Copy the archive contents into the project root and allow file replacement.
+Then run:
+
+python -m pytest -q
+python tools\cb_1_6_0_diagnostics.py
+python tools\cb_1_6_0_smoke.py
+python tools\cb_1_6_0_report.py
+
+Do not commit until all checks pass.

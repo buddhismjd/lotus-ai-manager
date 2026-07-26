@@ -25,6 +25,8 @@ _QUERY_STOPWORDS = {
     "а", "ли", "есть", "имеется", "нужен", "нужна", "нужны", "хочу",
     "купить", "заказать", "покажи", "покажите", "найди", "найдите",
     "товар", "товары", "у", "вас", "мне", "подскажите", "все", "весь",
+    "что", "нибудь", "что-нибудь", "то", "какое", "какая", "какие",
+    "любой", "любая", "любые", "связанный", "связанная", "связанные",
 }
 _KIND_WORD_PREFIXES = {
     "стату", "статуй", "скульптур", "фигур", "амулет", "подвес", "кулон",
@@ -128,6 +130,7 @@ class CollectionItem:
     button_label: str = "Открыть товар"
     group: str | None = None
     item_type: str = "product"
+    category: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -247,6 +250,7 @@ def build_product_collection(query: str, products: Iterable[Product] | None = No
                 else "Наличие уточняется"
             ),
             item_type="product",
+            category=(product.category or "").strip() or None,
         ))
     return rank_collection(query, items)
 
