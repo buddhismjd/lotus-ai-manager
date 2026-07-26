@@ -5,6 +5,7 @@ from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
 from backend.catalog.collection_builder import build_product_collection
+from backend.catalog.recommendation_engine import analyze_recommendation_query
 from backend.catalog.commercial_cards import commercial_cards
 from backend.tours.collection_builder import build_tour_collection, detect_country
 from backend.sales_assistant.dialogue import (
@@ -220,8 +221,10 @@ class SalesAssistant:
                 else:
                     state.active_title = None
                     state.active_url = None
+                recommendation = analyze_recommendation_query(query)
+                verb = "Подобрала" if recommendation.is_recommendation else "Нашла"
                 answer = (
-                    f"Нашла {len(product_items)} подходящих "
+                    f"{verb} {len(product_items)} подходящих "
                     + (
                         "товар."
                         if len(product_items) == 1
@@ -229,7 +232,7 @@ class SalesAssistant:
                         if len(product_items) < 5
                         else "товаров."
                     )
-                    + " Все варианты представлены ниже."
+                    + " Варианты представлены ниже."
                 )
                 return self._with_dialogue(
                     SalesReply(

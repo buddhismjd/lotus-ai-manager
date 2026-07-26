@@ -12,6 +12,10 @@ from backend.integrations.product_page_snapshot import load_product_page_snapsho
 from backend.catalog.models import Product
 from backend.catalog.collection_ranking import rank_collection
 from backend.catalog.product_intelligence import analyze_product, normalize
+from backend.catalog.recommendation_engine import (
+    analyze_recommendation_query,
+    apply_recommendation_limit,
+)
 from backend.catalog.product_profiles import get_product_profile
 from backend.catalog.repositories import ProductRepository
 from backend.rag.dynamic_query_router import analyze_query_semantics, detect_product_kind
@@ -178,6 +182,7 @@ def _matches_product(product: Product, query: str) -> bool:
     requested_kind = requested["product_kind"]
     requested_entities = set(requested["entities"])
     requested_materials = set(requested["materials"])
+    recommendation = analyze_recommendation_query(query)
 
     profile = get_product_profile(_profile_id(product)) if _profile_id(product) else None
     intelligence = analyze_product(
@@ -206,11 +211,24 @@ def _matches_product(product: Product, query: str) -> bool:
         return False
     if requested_materials and not requested_materials.intersection(product_materials):
         return False
+    if recommendation.usage and recommendation.usage not in set(intelligence.usages):
+        return False
     if not _matches_surface_kind(product, query):
         return False
 
-    semantic_match = bool(requested_kind or requested_entities or requested_materials)
-    return semantic_match and _matches_lexical_constraints(product, query)
+    semantic_match = bool(
+        requested_kind
+        or requested_entities
+        or requested_materials
+        or recommendation.usage
+    )
+    # Purpose words such as “gift” and “home altar” are semantic catalog
+    # facets, not literal title constraints. Other explicit facets (aspect,
+    # kind, material) have already been checked above.
+    return semantic_match and (
+        recommendation.usage is not None
+        or _matches_lexical_constraints(product, query)
+    )
 
 
 def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
@@ -252,7 +270,9 @@ def build_product_collection(query: str, products: Iterable[Product] | None = No
             item_type="product",
             category=(product.category or "").strip() or None,
         ))
-    return rank_collection(query, items)
+    ranked = rank_collection(query, items)
+    recommendation = analyze_recommendation_query(query)
+    return list(apply_recommendation_limit(ranked, recommendation))
 
 
 __all__ = ["CollectionItem", "build_product_collection"]

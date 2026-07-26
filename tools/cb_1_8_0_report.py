@@ -1,0 +1,7 @@
+print("CB-1.8.0 — Deterministic Recommendation Engine")
+print("scope=commercial products only")
+print("supported_intents=gift, home altar")
+print("recommendation_limit=6 for broad selection requests")
+print("explicit_all_requests=never truncated")
+print("knowledge_boundary=no practice or encyclopedia recommendations")
+print("card_contract=CB-1.7.0 preserved")

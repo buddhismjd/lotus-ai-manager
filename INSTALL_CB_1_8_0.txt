@@ -1,0 +1,9 @@
+CB-1.8.0 — Deterministic Recommendation Engine
+
+1. Copy all folders and files from this package into the project root.
+2. Confirm replacement of existing files.
+3. Run:
+   python -m pytest -q
+   python tools\cb_1_8_0_diagnostics.py
+   python tools\cb_1_8_0_smoke.py
+   python tools\cb_1_8_0_report.py
