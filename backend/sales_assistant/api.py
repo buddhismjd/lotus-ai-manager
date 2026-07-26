@@ -44,6 +44,26 @@ async def sales_chat(payload: dict) -> JSONResponse:
     })
 
 
+@router.get("/session/{session_id}")
+async def sales_session(session_id: str) -> JSONResponse:
+    session_key = session_id.strip() or "default"
+    session = get_sales_assistant().session(session_key)
+    return JSONResponse({
+        "session_id": session.session_id,
+        "status": session.status,
+        "handoff_status": session.handoff_status,
+        "dialogue_stage": session.state.get("stage", "discovery"),
+        "messages": [
+            {
+                "role": message.role,
+                "content": message.content,
+                "created_at": message.created_at,
+            }
+            for message in session.messages
+        ],
+    })
+
+
 @router.post("/reset")
 async def reset_sales_chat(payload: dict) -> JSONResponse:
     session_id = str(payload.get("session_id") or "default").strip() or "default"

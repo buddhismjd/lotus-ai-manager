@@ -3,6 +3,7 @@
 
   const config = {
     apiUrl: window.AI_BODHI_API_URL || "/api/sales/chat",
+    sessionUrl: window.AI_BODHI_SESSION_URL || "/api/sales/session",
     storageKey: "ai-bodhi-session-id",
   };
 
@@ -165,6 +166,24 @@
       input.focus();
     }
   };
+
+  const restoreConversation = async () => {
+    try {
+      const response = await fetch(`${config.sessionUrl}/${encodeURIComponent(sessionId)}`);
+      if (!response.ok) return;
+      const payload = await response.json();
+      if (!Array.isArray(payload.messages) || payload.messages.length === 0) return;
+      messages.replaceChildren();
+      payload.messages.forEach((message) => {
+        if (!message || !message.content) return;
+        appendMessage(message.content, message.role === "user" ? "user" : "assistant");
+      });
+    } catch (error) {
+      console.warn("AI Bodhi session restore skipped:", error);
+    }
+  };
+
+  restoreConversation();
 
   toggle.addEventListener("click", () => setOpen(panel.hidden));
   closeButton.addEventListener("click", () => setOpen(false));

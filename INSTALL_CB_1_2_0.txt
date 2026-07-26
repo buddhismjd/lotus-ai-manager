@@ -1,0 +1,8 @@
+Распакуйте архив в корень проекта с заменой файлов.
+
+Проверки:
+.venv\Scripts\activate.bat
+python -m pytest -q
+python tools\cb_1_2_0_diagnostics.py
+python tools\cb_1_2_0_smoke.py
+python tools\cb_1_2_0_report.py

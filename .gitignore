@@ -47,3 +47,5 @@ test_*.bat
 # Preserve production knowledge package
 !backend/knowledge/
 !backend/knowledge/**
+__pycache__/
+*.pyc

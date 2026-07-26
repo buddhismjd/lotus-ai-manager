@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 from threading import RLock
 
@@ -87,6 +87,44 @@ class DialogueState:
     def __post_init__(self) -> None:
         if self.lead is None:
             self.lead = LeadDraft()
+
+    def to_dict(self) -> dict:
+        payload = asdict(self)
+        payload["stage"] = self.stage.value
+        payload["candidate_tour_ids"] = list(self.candidate_tour_ids)
+        payload["candidate_tour_titles"] = list(self.candidate_tour_titles)
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: dict | None) -> "DialogueState":
+        if not isinstance(payload, dict):
+            return cls()
+        lead_payload = payload.get("lead") if isinstance(payload.get("lead"), dict) else {}
+        stage_value = payload.get("stage", DialogueStage.DISCOVERY.value)
+        try:
+            stage = DialogueStage(stage_value)
+        except ValueError:
+            stage = DialogueStage.DISCOVERY
+        return cls(
+            topic=str(payload.get("topic") or "unknown"),
+            goal=payload.get("goal"),
+            stage=stage,
+            last_query=str(payload.get("last_query") or ""),
+            month=payload.get("month"),
+            active_tour_id=payload.get("active_tour_id"),
+            active_title=payload.get("active_title"),
+            active_url=payload.get("active_url"),
+            candidate_tour_ids=tuple(payload.get("candidate_tour_ids") or ()),
+            candidate_tour_titles=tuple(payload.get("candidate_tour_titles") or ()),
+            product_selection_category=payload.get("product_selection_category"),
+            product_selection_aspect=payload.get("product_selection_aspect"),
+            product_selection_height_min_cm=payload.get("product_selection_height_min_cm"),
+            product_selection_height_max_cm=payload.get("product_selection_height_max_cm"),
+            lead=LeadDraft(**{
+                key: lead_payload.get(key)
+                for key in LeadDraft.__dataclass_fields__
+            }),
+        )
 
     def remember_tour_list(self, tours: list[StructuredTour], *, month: int | None) -> None:
         self.topic = "tour"
@@ -201,58 +239,43 @@ class DialogueState:
 
 
 class DialogueStateStore:
-    """Thread-safe in-memory state store keyed by chat session."""
+    """Thread-safe state cache with optional persistent backing repository."""
 
-    def __init__(self) -> None:
+    def __init__(self, repository=None) -> None:
         self._states: dict[str, DialogueState] = {}
+        self._repository = repository
         self._lock = RLock()
 
     def get(self, session_id: str) -> DialogueState:
         with self._lock:
-            return self._states.setdefault(session_id, DialogueState())
+            if session_id not in self._states:
+                payload = self._repository.get_state(session_id) if self._repository else None
+                self._states[session_id] = DialogueState.from_dict(payload)
+            return self._states[session_id]
+
+    def persist(self, session_id: str) -> None:
+        if self._repository is None:
+            return
+        with self._lock:
+            state = self._states.setdefault(session_id, DialogueState())
+            handoff_status = (
+                "complete" if state.stage == DialogueStage.HANDOFF_COMPLETE
+                else "collecting" if state.stage.value.startswith("handoff_")
+                else "none"
+            )
+            self._repository.save_state(
+                session_id, state.to_dict(), handoff_status=handoff_status
+            )
 
     def reset(self, session_id: str) -> None:
         with self._lock:
             self._states.pop(session_id, None)
+            if self._repository is not None:
+                self._repository.reset(session_id)
 
     def snapshot(self, session_id: str) -> DialogueState:
         with self._lock:
-            state = self._states.setdefault(session_id, DialogueState())
-            return DialogueState(
-                topic=state.topic,
-                goal=state.goal,
-                stage=state.stage,
-                last_query=state.last_query,
-                month=state.month,
-                active_tour_id=state.active_tour_id,
-                active_title=state.active_title,
-                active_url=state.active_url,
-                candidate_tour_ids=state.candidate_tour_ids,
-                candidate_tour_titles=state.candidate_tour_titles,
-                product_selection_category=state.product_selection_category,
-                product_selection_aspect=state.product_selection_aspect,
-                product_selection_height_min_cm=state.product_selection_height_min_cm,
-                product_selection_height_max_cm=state.product_selection_height_max_cm,
-                lead=LeadDraft(
-                    interest=state.lead.interest,
-                    name=state.lead.name,
-                    contact_method=state.lead.contact_method,
-                    contact_value=state.lead.contact_value,
-                    comment=state.lead.comment,
-                    conversation_summary=state.lead.conversation_summary,
-                    subscription_topic=state.lead.subscription_topic,
-                    consent_text=state.lead.consent_text,
-                    selection_category=state.lead.selection_category,
-                    selection_aspect=state.lead.selection_aspect,
-                    requested_height_min_cm=state.lead.requested_height_min_cm,
-                    requested_height_max_cm=state.lead.requested_height_max_cm,
-                    social_channel=state.lead.social_channel,
-                    social_contact=state.lead.social_contact,
-                    email=state.lead.email,
-                    handoff_reason=state.lead.handoff_reason,
-                    handoff_priority=state.lead.handoff_priority,
-                ),
-            )
+            return DialogueState.from_dict(self.get(session_id).to_dict())
 
 
 __all__ = ["DialogueStage", "DialogueState", "DialogueStateStore", "LeadDraft"]

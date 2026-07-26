@@ -25,6 +25,7 @@ from backend.sales_assistant.product_selection import (
     parse_product_selection_request,
 )
 from backend.sales_assistant.state import DialogueStage, DialogueState, DialogueStateStore
+from backend.storage.repositories.session_repository import SessionRepository
 from backend.sales_assistant.strategy import choose_strategy
 from backend.sales_assistant.tone import (
     TONE,
@@ -61,8 +62,9 @@ class SalesReply:
 class SalesAssistant:
     """Stateful sales layer over the established Bodhi service."""
 
-    def __init__(self) -> None:
-        self._states = DialogueStateStore()
+    def __init__(self, session_repository: SessionRepository | None = None) -> None:
+        self._sessions = session_repository
+        self._states = DialogueStateStore(self._sessions)
         self._dialogue = SalesDialogueManager()
         self._tours = StructuredTourRepository()
         self._leads = LeadRepository()
@@ -74,7 +76,23 @@ class SalesAssistant:
     def reset(self, session_id: str) -> None:
         self._states.reset(session_id)
 
+    def session(self, session_id: str):
+        repository = self._sessions or SessionRepository()
+        return repository.get_session(session_id)
+
     def reply(self, message: str, session_id: str = "default") -> SalesReply:
+        query = message.strip()
+        if not query:
+            return SalesReply(TONE.empty_request, "empty", "unknown")
+        if self._sessions is not None:
+            self._sessions.append_message(session_id, "user", query)
+        result = self._reply(query, session_id)
+        self._states.persist(session_id)
+        if self._sessions is not None:
+            self._sessions.append_message(session_id, "assistant", result.answer)
+        return result
+
+    def _reply(self, message: str, session_id: str = "default") -> SalesReply:
         query = message.strip()
         if not query:
             return SalesReply(TONE.empty_request, "empty", "unknown")
@@ -1333,7 +1351,7 @@ class SalesAssistant:
         )
 
 
-_ASSISTANT = SalesAssistant()
+_ASSISTANT = SalesAssistant(SessionRepository())
 
 
 def get_sales_assistant() -> SalesAssistant:

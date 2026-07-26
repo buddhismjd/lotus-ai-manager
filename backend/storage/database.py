@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS documents (
     priority INTEGER NOT NULL DEFAULT 0,
     content_hash TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    state_json TEXT NOT NULL DEFAULT '{}',
+    handoff_status TEXT NOT NULL DEFAULT 'none'
 );
 
 CREATE TABLE IF NOT EXISTS document_chunks (
@@ -164,6 +166,9 @@ ON document_chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_messages_dialog_id
 ON messages(dialog_id);
 
+CREATE INDEX IF NOT EXISTS idx_dialogs_session_status
+ON dialogs(session_id, status);
+
 CREATE INDEX IF NOT EXISTS idx_leads_status
 ON leads(status);
 
@@ -224,6 +229,13 @@ def initialize_database() -> Path:
             "extractor_version",
             "TEXT NOT NULL DEFAULT '2.1'",
         )
+        dialog_columns = {
+            "state_json": "TEXT NOT NULL DEFAULT '{}'",
+            "handoff_status": "TEXT NOT NULL DEFAULT 'none'",
+        }
+        for column_name, definition in dialog_columns.items():
+            _ensure_column(connection, "dialogs", column_name, definition)
+
         lead_columns = {
             "updated_at": "TEXT",
             "contact_channel": "TEXT",
