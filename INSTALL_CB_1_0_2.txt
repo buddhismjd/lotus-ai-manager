@@ -1,0 +1,24 @@
+CB-1.0.2 — LeadRepository & Database Integration
+
+1. Распакуйте содержимое архива в корень проекта:
+   D:\Lotus-AI-Manager-v0.5
+
+2. Разрешите Windows объединить папки и заменить существующие файлы.
+
+3. Удалите ранее ошибочно добавленный в Git служебный каталог Python:
+
+   git rm -r --cached --ignore-unmatch backend\knowledge\__pycache__
+   if exist backend\knowledge\__pycache__ rmdir /s /q backend\knowledge\__pycache__
+
+   Это необходимо, потому что файлы .pyc уже попали в предыдущий коммит.
+   Правило __pycache__/ в .gitignore уже присутствует, поэтому снова они не добавятся.
+
+4. Запустите проверки:
+
+   .venv\Scripts\activate.bat
+   python -m pytest -q
+   python tools\cb_1_0_2_diagnostics.py
+   python tools\cb_1_0_2_smoke.py
+   python tools\cb_1_0_2_report.py
+
+5. Пока не выполняйте git add, commit и push. Сначала пришлите полный лог проверок.

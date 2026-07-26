@@ -69,6 +69,13 @@ CREATE TABLE IF NOT EXISTS leads (
     comment TEXT,
     status TEXT NOT NULL DEFAULT 'new',
     created_at TEXT NOT NULL,
+    updated_at TEXT,
+    contact_channel TEXT,
+    contact_value TEXT,
+    session_id TEXT,
+    handoff_reason TEXT,
+    handoff_priority TEXT,
+    manager_summary TEXT,
     FOREIGN KEY (dialog_id)
         REFERENCES dialogs(id)
         ON DELETE SET NULL
@@ -216,6 +223,36 @@ def initialize_database() -> Path:
             "product_raw_snapshots",
             "extractor_version",
             "TEXT NOT NULL DEFAULT '2.1'",
+        )
+        lead_columns = {
+            "updated_at": "TEXT",
+            "contact_channel": "TEXT",
+            "contact_value": "TEXT",
+            "session_id": "TEXT",
+            "handoff_reason": "TEXT",
+            "handoff_priority": "TEXT",
+            "manager_summary": "TEXT",
+        }
+        for column_name, definition in lead_columns.items():
+            _ensure_column(connection, "leads", column_name, definition)
+
+        connection.execute(
+            """
+            UPDATE leads
+            SET updated_at = COALESCE(updated_at, created_at),
+                contact_channel = COALESCE(
+                    contact_channel,
+                    CASE
+                        WHEN telegram IS NOT NULL AND telegram != '' THEN 'telegram'
+                        WHEN phone IS NOT NULL AND phone != '' THEN 'phone'
+                        WHEN email IS NOT NULL AND email != '' THEN 'email'
+                        ELSE NULL
+                    END
+                ),
+                contact_value = COALESCE(
+                    contact_value, telegram, phone, email
+                )
+            """
         )
 
     return DATABASE_FILE
