@@ -82,6 +82,8 @@ class DialogueState:
     product_selection_aspect: str | None = None
     product_selection_height_min_cm: float | None = None
     product_selection_height_max_cm: float | None = None
+    pending_clarification_query: str | None = None
+    pending_clarification_type: str | None = None
     lead: LeadDraft = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
@@ -120,6 +122,8 @@ class DialogueState:
             product_selection_aspect=payload.get("product_selection_aspect"),
             product_selection_height_min_cm=payload.get("product_selection_height_min_cm"),
             product_selection_height_max_cm=payload.get("product_selection_height_max_cm"),
+            pending_clarification_query=payload.get("pending_clarification_query"),
+            pending_clarification_type=payload.get("pending_clarification_type"),
             lead=LeadDraft(**{
                 key: lead_payload.get(key)
                 for key in LeadDraft.__dataclass_fields__
@@ -195,6 +199,21 @@ class DialogueState:
                 "Согласие получить на email информацию по текущему запросу."
             )
 
+
+
+    def start_commercial_clarification(self, *, query: str, clarification_type: str) -> None:
+        self.goal = "commercial_clarification"
+        self.pending_clarification_query = query
+        self.pending_clarification_type = clarification_type
+
+    def consume_commercial_clarification(self, answer: str) -> str | None:
+        if not self.pending_clarification_query:
+            return None
+        combined = f"{self.pending_clarification_query}. {answer}"
+        self.pending_clarification_query = None
+        self.pending_clarification_type = None
+        self.goal = None
+        return combined
 
     def remember_product_selection(
         self,

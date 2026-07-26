@@ -1,0 +1,16 @@
+CB-1.9.0 — Conversational Sales Engine
+
+Copy all package files into the project root and confirm replacement.
+
+Run:
+  .venv\Scripts\activate.bat
+  python -m pytest -q
+  python tools\cb_1_9_0_diagnostics.py
+  python tools\cb_1_9_0_smoke.py
+  python tools\cb_1_9_0_report.py
+
+Git:
+  git status
+  git add backend tests tools docs INSTALL_CB_1_9_0.txt
+  git commit -m "CB-1.9.0 Conversational Sales Engine"
+  git push origin feature/catalog-3.0

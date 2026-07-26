@@ -8,6 +8,10 @@ from backend.catalog.collection_builder import build_product_collection
 from backend.catalog.recommendation_engine import analyze_recommendation_query
 from backend.catalog.commercial_cards import commercial_cards
 from backend.tours.collection_builder import build_tour_collection, detect_country
+from backend.sales_assistant.conversation_decision import (
+    ConversationDecisionType,
+    decide_conversation_action,
+)
 from backend.sales_assistant.dialogue import (
     DialogueSuggestion,
     NextActionType,
@@ -100,6 +104,10 @@ class SalesAssistant:
             return SalesReply(TONE.empty_request, "empty", "unknown")
 
         state = self._states.get(session_id)
+        clarification_answer = state.consume_commercial_clarification(query)
+        clarification_already_asked = clarification_answer is not None
+        if clarification_answer is not None:
+            query = clarification_answer
 
         if state.stage in {
             DialogueStage.HANDOFF_NAME,
@@ -184,6 +192,46 @@ class SalesAssistant:
                 next_action=NextActionType.ASK_NAME,
                 dialogue_stage=state.stage.value,
             )
+
+        conversation_decision = decide_conversation_action(
+            query,
+            clarification_already_asked=clarification_already_asked,
+        )
+        if conversation_decision.action == ConversationDecisionType.ASK_CLARIFICATION:
+            state.start_commercial_clarification(
+                query=query,
+                clarification_type=conversation_decision.clarification_type or "commercial",
+            )
+            return SalesReply(
+                answer=conversation_decision.question or "Уточните, пожалуйста, что именно Вы ищете.",
+                kind="commercial_clarification",
+                topic="product",
+                dialogue_stage=state.stage.value,
+            )
+
+        if clarification_already_asked:
+            product_items = build_product_collection(query)
+            if product_items:
+                state.last_query = query
+                state.topic = "product"
+                state.active_title = product_items[0].title if len(product_items) == 1 else None
+                state.active_url = product_items[0].url if len(product_items) == 1 else None
+                return SalesReply(
+                    answer=(
+                        f"Подобрала {len(product_items)} подходящих "
+                        + (
+                            "товар."
+                            if len(product_items) == 1
+                            else "товара."
+                            if len(product_items) < 5
+                            else "товаров."
+                        )
+                        + " Варианты представлены ниже."
+                    ),
+                    kind="product_collection",
+                    topic="product",
+                    items=commercial_cards(product_items),
+                )
 
         selection_request = parse_product_selection_request(query)
         if selection_request is not None:
