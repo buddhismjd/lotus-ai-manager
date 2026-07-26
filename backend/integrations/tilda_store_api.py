@@ -144,15 +144,14 @@ def _extract_availability_status(product: dict[str, Any]) -> str | None:
             text_values.append(_clean_html(value).lower())
 
     joined = " ".join(text_values)
-    published_text = _clean_html(
-        json.dumps(product, ensure_ascii=False, default=str)
-    ).lower()
-    status_text = f"{joined} {published_text}"
-    if re.search(r"под\s*заказ|на\s*заказ", status_text):
+    # Positive availability must come only from dedicated stock fields.
+    # Scanning the whole Tilda payload is unsafe: it may contain generic UI
+    # labels such as "В наличии" unrelated to this particular product.
+    if re.search(r"под\s*заказ|на\s*заказ", joined):
         return "Под заказ"
-    if re.search(r"нет\s+в\s+наличии|нет\s+в\s+наличие|распродан|продан", status_text):
+    if re.search(r"нет\s+в\s+наличии|нет\s+в\s+наличие|распродан|продан", joined):
         return "Нет в наличии"
-    if re.search(r"в\s+наличии|в\s+наличие", status_text):
+    if re.search(r"в\s+наличии|в\s+наличие", joined):
         return "В наличии"
 
     for key in ("in_stock", "instock", "is_available"):
@@ -162,8 +161,8 @@ def _extract_availability_status(product: dict[str, Any]) -> str | None:
 
     quantity = _first_value(product, "quantity", "qty", "stock_quantity")
     try:
-        if quantity not in (None, "") and float(str(quantity).replace(",", ".")) > 0:
-            return "В наличии"
+        if quantity not in (None, ""):
+            return "В наличии" if float(str(quantity).replace(",", ".")) > 0 else "Нет в наличии"
     except (TypeError, ValueError):
         pass
 

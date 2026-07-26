@@ -5,9 +5,11 @@ from fastapi.responses import JSONResponse
 
 from backend.sales_assistant.service import get_sales_assistant
 from backend.sales_assistant.selection_page import router as selection_router
+from backend.sales_assistant.product_media import router as product_media_router
 
 router = APIRouter(prefix="/api/sales", tags=["sales-assistant"])
 router.include_router(selection_router)
+router.include_router(product_media_router)
 
 
 @router.post("/chat")

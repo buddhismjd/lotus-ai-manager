@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 
 _PRODUCT_ASSIGNMENT_RE = re.compile(r"\bvar\s+product\s*=\s*", re.IGNORECASE)
+_PRODUCT_UID_FROM_URL_RE = re.compile(r"/tproduct/(?P<uid>\d+)(?:[-/]|$)", re.IGNORECASE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +24,7 @@ class RawProductSnapshot:
     snapshot_sha256: str
     captured_at: str
     source_kind: str = "product_page_script"
-    extractor_version: str = "2.1"
+    extractor_version: str = "2.2"
 
 
 def fetch_product_html(url: str, timeout: float = 30.0) -> str:
@@ -72,31 +73,51 @@ def _balanced_json_object(text: str, start: int) -> str:
     raise ValueError("Объект product не закрыт")
 
 
-def extract_product_object(raw_html: str) -> tuple[dict[str, Any], str]:
-    match = _PRODUCT_ASSIGNMENT_RE.search(raw_html)
-    if match is None:
-        raise ValueError("На странице не найден JavaScript-объект var product")
+def _product_objects(raw_html: str) -> list[tuple[dict[str, Any], str]]:
+    objects: list[tuple[dict[str, Any], str]] = []
+    for match in _PRODUCT_ASSIGNMENT_RE.finditer(raw_html):
+        object_start = raw_html.find("{", match.end())
+        if object_start < 0:
+            continue
+        try:
+            raw_json = _balanced_json_object(raw_html, object_start)
+            data = json.loads(raw_json)
+        except (ValueError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict) and str(data.get("uid") or "").strip():
+            objects.append((data, raw_json))
+    return objects
 
-    object_start = raw_html.find("{", match.end())
-    raw_json = _balanced_json_object(raw_html, object_start)
 
-    try:
-        data = json.loads(raw_json)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Объект product не является валидным JSON: {exc}") from exc
+def extract_product_object(
+    raw_html: str,
+    *,
+    expected_uid: str | None = None,
+) -> tuple[dict[str, Any], str]:
+    objects = _product_objects(raw_html)
+    if not objects:
+        raise ValueError("На странице не найден валидный JavaScript-объект var product")
 
-    if not isinstance(data, dict):
-        raise ValueError("Объект product должен быть словарём")
+    expected = str(expected_uid or "").strip()
+    if expected:
+        for data, raw_json in objects:
+            if str(data.get("uid") or "").strip() == expected:
+                return data, raw_json
+        raise ValueError(f"На странице не найден объект product с uid={expected}")
 
-    uid = str(data.get("uid") or "").strip()
-    if not uid:
-        raise ValueError("В объекте product отсутствует uid")
-
-    return data, raw_json
+    if len(objects) > 1:
+        raise ValueError(
+            "На странице найдено несколько объектов product; требуется ожидаемый uid"
+        )
+    return objects[0]
 
 
 def build_raw_snapshot(raw_html: str, page_url: str) -> RawProductSnapshot:
-    product_data, raw_json = extract_product_object(raw_html)
+    uid_match = _PRODUCT_UID_FROM_URL_RE.search(page_url)
+    expected_uid = uid_match.group("uid") if uid_match else None
+    product_data, raw_json = extract_product_object(
+        raw_html, expected_uid=expected_uid
+    )
     normalized_json = json.dumps(
         product_data,
         ensure_ascii=False,
@@ -112,7 +133,7 @@ def build_raw_snapshot(raw_html: str, page_url: str) -> RawProductSnapshot:
         snapshot_sha256=hashlib.sha256(normalized_json.encode("utf-8")).hexdigest(),
         captured_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         source_kind="product_page_script",
-        extractor_version="2.1",
+        extractor_version="2.2",
     )
 
 

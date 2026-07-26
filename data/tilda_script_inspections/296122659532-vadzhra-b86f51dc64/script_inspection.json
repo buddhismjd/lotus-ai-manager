@@ -1,0 +1,458 @@
+{
+  "url": "https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra",
+  "inspected_at": "2026-07-13T12:15:15+00:00",
+  "html_size": 26217,
+  "html_sha256": "b86f51dc642daae6bcda571d78e970ec1212b43bc28a02222028820f05a89b20",
+  "scripts": [
+    {
+      "index": 1,
+      "src": "https://static.tildacdn.com/js/tilda-scripts-3.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 2,
+      "src": "https://tilda.ws/project13546221/tilda-blocks-2.7.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 3,
+      "src": "https://static.tildacdn.com/js/tilda-forms-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 4,
+      "src": "https://static.tildacdn.com/js/hammer.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 5,
+      "src": "https://static.tildacdn.com/js/tilda-slds-1.4.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 6,
+      "src": "https://static.tildacdn.com/js/tilda-zoom-2.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 7,
+      "src": "https://static.tildacdn.com/js/tilda-cart-1.1.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 8,
+      "src": "https://static.tildacdn.com/js/tilda-products-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 9,
+      "src": "https://static.tildacdn.com/js/tilda-catalog-1.1.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 10,
+      "src": "https://static.tildacdn.com/js/tilda-delivery-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 11,
+      "src": "https://static.tildacdn.com/js/tilda-cover-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 12,
+      "src": "https://static.tildacdn.com/js/tilda-menusub-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 13,
+      "src": "https://static.tildacdn.com/js/tilda-animation-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 14,
+      "src": "https://static.tildacdn.com/js/tilda-wishlist-1.0.min.js",
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 15,
+      "src": null,
+      "script_type": "text/javascript",
+      "size": 1168,
+      "sha256": "47fb6fa05a4288cfba1177df34378c301c01a8c2d18948a1100ffe4c6db81724",
+      "tokens": [],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [],
+        "productuid": []
+      },
+      "assignments": [],
+      "snippets": {}
+    },
+    {
+      "index": 16,
+      "src": null,
+      "script_type": "text/javascript",
+      "size": 8129,
+      "sha256": "9de297dc0e7ef4936bb2dd4f0bd94515c66ed1d162078776e4fd362fd21615f8",
+      "tokens": [
+        "storepartuid",
+        "recid",
+        "productuid",
+        "t-store",
+        "tilda",
+        "price",
+        "image"
+      ],
+      "urls": [],
+      "identifiers": {
+        "storepartuid": [],
+        "recid": [
+          "1"
+        ],
+        "productuid": [
+          "296122659532"
+        ]
+      },
+      "assignments": [
+        {
+          "name": "options",
+          "value_kind": "object",
+          "size": 2,
+          "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "json_valid": true,
+          "preview": "{}",
+          "source_script": 16
+        },
+        {
+          "name": "product",
+          "value_kind": "object",
+          "size": 2091,
+          "sha256": "0b7a0e39eda8d1bbfcdb9dd7bfb3d9d0fd9b1bf5bdf75cb0076d7e66523a3e97",
+          "json_valid": true,
+          "preview": "{\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<br \\/><br \\/>Ритуальный и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это символ, напоминающий жезл или скипетр, часто с несколькими концами, и ассоциируется с молнией и алмазом, символизируя духовную силу, непоколебимость и защиту.\",\"sku\":\"Vadzhra-25000\",\"price\":\"25000.0000\",\"gallery\":[{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.ti",
+          "source_script": 16
+        },
+        {
+          "name": "prodcard_optsObj",
+          "value_kind": "object",
+          "size": 297,
+          "sha256": "d8346dfddd284d63fd296d949913d44fb8013ac56c1b8ddcb06446d88495f060",
+          "json_valid": false,
+          "preview": "{ hasWrap: false, txtPad: '', bgColor: '', borderRadius: '', shadowSize: '0px', shadowOpacity: '', shadowSizeHover: '', shadowOpacityHover: '', shadowShiftyHover: '', btnTitle1: '', btnLink1: '', btnTitle2: '', btnLink2: '', showOpts: false}",
+          "source_script": 16
+        },
+        {
+          "name": "price_optsObj",
+          "value_kind": "object",
+          "size": 73,
+          "sha256": "d0a21dc939cb7c1c91cd08b339c6dfb684ae8cfec25b0b8dbe0abf36901fce99",
+          "json_valid": false,
+          "preview": "{ color: '', colorOld: '', fontSize: '', fontWeight: '' }",
+          "source_script": 16
+        },
+        {
+          "name": "popup_optsObj",
+          "value_kind": "object",
+          "size": 286,
+          "sha256": "17ce2f9ce1e0f380a6e51357409434d1521d7e6e1a2656e3c4591067e45703ea",
+          "json_valid": false,
+          "preview": "{ columns: '', columns2: '', isVertical: '', align: '', btnTitle: '_Buy_now_', closeText: '', iconColor: '', containerBgColor: '', overlayBgColorRgba: '', popupStat: '', popupContainer: '', fixedButton: false, mobileGalleryStyle: '' }",
+          "source_script": 16
+        },
+        {
+          "name": "slider_optsObj",
+          "value_kind": "object",
+          "size": 122,
+          "sha256": "6a1b4dfba5f5a5dbe8006f8cf25a99e3052bfee31df026085f4431da0bb919ff",
+          "json_valid": false,
+          "preview": "{ anim_speed: '', arrowColor: '', videoPlayerIconColor: '', cycle: '', controls: '', bgcolor: '' }",
+          "source_script": 16
+        },
+        {
+          "name": "slider_dotsOptsObj",
+          "value_kind": "object",
+          "size": 76,
+          "sha256": "b40435001c3a71d39cd84a7033f20c4ee1c1a79075c0b28b0cb5613f080a0ca6",
+          "json_valid": false,
+          "preview": "{ size: '', bgcolor: '', bordersize: '', bgcoloractive: '' }",
+          "source_script": 16
+        },
+        {
+          "name": "slider_slidesOptsObj",
+          "value_kind": "object",
+          "size": 58,
+          "sha256": "4f50abd1e9efa44e2bea31aae9b5301db06d00fe6c662518a5e7f36e090cdcfa",
+          "json_valid": false,
+          "preview": "{ zoomable: false, bgsize: '', ratio: '0.75' }",
+          "source_script": 16
+        },
+        {
+          "name": "typography_optsObj",
+          "value_kind": "object",
+          "size": 42,
+          "sha256": "34dce2aac3670cdb5fba6ea10d9149dda801c352a38c316254c30fd09c661ea6",
+          "json_valid": false,
+          "preview": "{ descrColor: '', titleColor: '' }",
+          "source_script": 16
+        },
+        {
+          "name": "default_sortObj",
+          "value_kind": "object",
+          "size": 22,
+          "sha256": "4408ed22dac6cc5cab2c58923a3cd1648744812ec31d8f63861f4f8367fcd68f",
+          "json_valid": false,
+          "preview": "{ in_stock: false}",
+          "source_script": 16
+        },
+        {
+          "name": "options_catalog",
+          "value_kind": "object",
+          "size": 1405,
+          "sha256": "4ad24cda5f1b7da58f5f4790c95cbe6e0b2a6bf634f3adb5abfb20f039b6d9be",
+          "json_valid": false,
+          "preview": "{ btn1_style: btn1_style, btn2_style: btn2_style, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '',",
+          "source_script": 16
+        },
+        {
+          "name": "window.tStoreOptionsList",
+          "value_kind": "array",
+          "size": 361,
+          "sha256": "546b442198bf3def8db54028d11af5924b77eb1a7d0c40b0026581e478c07059",
+          "json_valid": true,
+          "preview": "[{\"title\":\"Цвет\",\"params\":{\"view\":\"select\",\"hasColor\":false,\"linkImage\":true},\"values\":[{\"id\":50889991,\"value\":\"голубой\"},{\"id\":50890011,\"value\":\"индиго\"},{\"id\":50890031,\"value\":\"прозрачный\"},{\"id\":50889771,\"color\":\"#8eb8c2\",\"value\":\"прозрачный розовый\"},{\"id\":50890001,\"value\":\"розовый\"},{\"id\":50890021,\"value\":\"фиолетовый\"},{\"id\":50890041,\"value\":\"черный\"}]}]",
+          "source_script": 16
+        }
+      ],
+      "snippets": {
+        "storepartuid": [
+          "рный\"}]}]; t_onFuncLoad('t_store_productInit', function() { t_store_productInit(recid, options, product); }); // if user coming from catalog redirect back to main page if (window.history.state && (window.history.state.productData || window.history.state.storepartuid)) { window.onpopstate = function() { window.history.replaceState(null, null, window.location.origin); window.location.replace(window.location.origin); }; } });"
+        ],
+        "recid": [
+          "t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<br \\/><br \\/>Ритуальный и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это с",
+          "levantsMethod = 'category_' + options.showRelevants; break; } t_onFuncLoad('t_store_loadProducts', function() { t_store_loadProducts( 'relevants', recid, options, false, { currentProductUid: '296122659532', relevantsQuantity: itemsCount, relevantsMethod: relevantsMeth",
+          "ue\":\"индиго\"},{\"id\":50890031,\"value\":\"прозрачный\"},{\"id\":50889771,\"color\":\"#8eb8c2\",\"value\":\"прозрачный розовый\"},{\"id\":50890001,\"value\":\"розовый\"},{\"id\":50890021,\"value\":\"фиолетовый\"},{\"id\":50890041,\"value\":\"черный\"}]}]; t_onFuncLoad('t_store_productInit', function() { t_store_productInit(recid, options, product); }); // if user coming from catalog redirect back to main page if (window.history.state && (window.history.state.productData || window.history.state.storepartuid)) { window.onpopstate = function() { window.history.replaceState("
+        ],
+        "productuid": [
+          "_loadProducts', function() { t_store_loadProducts( 'relevants', recid, options, false, { currentProductUid: '296122659532', relevantsQuantity: itemsCount, relevantsMethod: relevantsMethod, relevantsSort: 'random' } ); });"
+        ],
+        "t-store": [
+          "up_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', currencyDecimal: '', btnSize: '', verticalAlignButtons: fal"
+        ],
+        "tilda": [
+          "t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<b",
+          "t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<br \\/><br \\/>Ритуальный и мифологич",
+          "t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<br \\/><br \\/>Ритуальный и мифологический предмет, имеющий важное",
+          "t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {\"uid\":296122659532,\"rootpartid\":23168782,\"title\":\"Ваджра\",\"brand\":\"Тибет\",\"text\":\"Нерушимость просветленного состояния.<br \\/><br \\/>Ритуальный и мифологический предмет, имеющий важное значение в&n",
+          "зл или скипетр, часто с несколькими концами, и ассоциируется с молнией и алмазом, символизируя духовную силу, непоколебимость и защиту.\",\"sku\":\"Vadzhra-25000\",\"price\":\"25000.0000\",\"gallery\":[{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6332-6330-4162-a337-616337383466\\/57327537.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"",
+          "dzhra-25000\",\"price\":\"25000.0000\",\"gallery\":[{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6332-6330-4162-a337-616337383466\\/57327537.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3031-6330-4731-b965-376333346438\\/56758192.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"",
+          "-3036-4833-b163-326230633138\\/43830007.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6332-6330-4162-a337-616337383466\\/57327537.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3031-6330-4731-b965-376333346438\\/56758192.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3465-3363-4962-a165-653266663830\\/29221583.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"",
+          "-6330-4162-a337-616337383466\\/57327537.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3031-6330-4731-b965-376333346438\\/56758192.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3465-3363-4962-a165-653266663830\\/29221583.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6162-6534-4332-a134-643466633537\\/48891623.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"",
+          "-6330-4731-b965-376333346438\\/56758192.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3465-3363-4962-a165-653266663830\\/29221583.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6162-6534-4332-a134-643466633537\\/48891623.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3035-6431-4862-b136-653830633936\\/86233978.jpg\"}],\"sort\":1000500,\"quantity\":\"0\",\"portion\":0,\"newsort\":0,\"json_chars\":\"null\",\"externalid\"",
+          "-3363-4962-a165-653266663830\\/29221583.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6162-6534-4332-a134-643466633537\\/48891623.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor3035-6431-4862-b136-653830633936\\/86233978.jpg\"}],\"sort\":1000500,\"quantity\":\"0\",\"portion\":0,\"newsort\":0,\"json_chars\":\"null\",\"externalid\":\"9PS8NGsnYi0ryFaHb7jF\",\"pack_label\":\"lwh\",\"pack_x\":230,\"pack_y\":0,\"pack_z\":0,\"pack_m\":0,\"serverid\":\"master\",\"servertime\":\"1774374735.2005\",\"parentuid\":\"\",\"editions\":[{\"ui",
+          "rt\":0,\"json_chars\":\"null\",\"externalid\":\"9PS8NGsnYi0ryFaHb7jF\",\"pack_label\":\"lwh\",\"pack_x\":230,\"pack_y\":0,\"pack_z\":0,\"pack_m\":0,\"serverid\":\"master\",\"servertime\":\"1774374735.2005\",\"parentuid\":\"\",\"editions\":[{\"uid\":296122659532,\"price\":\"25 000.00\",\"priceold\":\"\",\"sku\":\"Vadzhra-25000\",\"quantity\":\"0\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"}],\"characteristics\":[],\"properties\":[],\"partuids\":[287310077602],\"url\":\"https:\\/\\/svet-lotosa.tilda.ws\\/tproduct\\/296122659532-vadzhra\"}; // draw slider or show image for SEO if (window.isSearchB",
+          "\"1774374735.2005\",\"parentuid\":\"\",\"editions\":[{\"uid\":296122659532,\"price\":\"25 000.00\",\"priceold\":\"\",\"sku\":\"Vadzhra-25000\",\"quantity\":\"0\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"}],\"characteristics\":[],\"properties\":[],\"partuids\":[287310077602],\"url\":\"https:\\/\\/svet-lotosa.tilda.ws\\/tproduct\\/296122659532-vadzhra\"}; // draw slider or show image for SEO if (window.isSearchBot) { var imgEl = document.querySelector('.js-product-img'); if (imgEl) imgEl.style.opacity = '1'; } else {"
+        ],
+        "price": [
+          "й и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это символ, напоминающий жезл или скипетр, часто с несколькими концами, и ассоциируется с молнией и алмазом, символизируя духовную силу, непоколебимость и защиту.\",\"sku\":\"Vadzhra-25000\",\"price\":\"25000.0000\",\"gallery\":[{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"},{\"alt\":\"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6",
+          "-6431-4862-b136-653830633936\\/86233978.jpg\"}],\"sort\":1000500,\"quantity\":\"0\",\"portion\":0,\"newsort\":0,\"json_chars\":\"null\",\"externalid\":\"9PS8NGsnYi0ryFaHb7jF\",\"pack_label\":\"lwh\",\"pack_x\":230,\"pack_y\":0,\"pack_z\":0,\"pack_m\":0,\"serverid\":\"master\",\"servertime\":\"1774374735.2005\",\"parentuid\":\"\",\"editions\":[{\"uid\":296122659532,\"price\":\"25 000.00\",\"priceold\":\"\",\"sku\":\"Vadzhra-25000\",\"quantity\":\"0\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"}],\"characteristics\":[],\"properties\":[],\"partuids\":[287310077602],\"url\":\"https:\\/\\/svet-lotosa.tilda.ws\\/tproduct\\/296122659532-vadzhra\"};",
+          "30633936\\/86233978.jpg\"}],\"sort\":1000500,\"quantity\":\"0\",\"portion\":0,\"newsort\":0,\"json_chars\":\"null\",\"externalid\":\"9PS8NGsnYi0ryFaHb7jF\",\"pack_label\":\"lwh\",\"pack_x\":230,\"pack_y\":0,\"pack_z\":0,\"pack_m\":0,\"serverid\":\"master\",\"servertime\":\"1774374735.2005\",\"parentuid\":\"\",\"editions\":[{\"uid\":296122659532,\"price\":\"25 000.00\",\"priceold\":\"\",\"sku\":\"Vadzhra-25000\",\"quantity\":\"0\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"}],\"characteristics\":[],\"properties\":[],\"partuids\":[287310077602],\"url\":\"https:\\/\\/svet-lotosa.tilda.ws\\/tproduct\\/296122659532-vadzhra\"};",
+          "dcard_optsObj = { hasWrap: false, txtPad: '', bgColor: '', borderRadius: '', shadowSize: '0px', shadowOpacity: '', shadowSizeHover: '', shadowOpacityHover: '', shadowShiftyHover: '', btnTitle1: '', btnLink1: '', btnTitle2: '', btnLink2: '', showOpts: false}; var price_optsObj = { color: '', colorOld: '', fontSize: '', fontWeight: '' }; var popup_optsObj = { columns: '', columns2: '', isVertical: '', align: '', btnTitle: '_Buy_now_', closeText: '', iconColor: '', containerBgColor: '', overlayBgColorRgba: '', popupStat: '',",
+          "tn1_style: btn1_style, btn2_style: btn2_style, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currenc",
+          "le: btn1_style, btn2_style: btn2_style, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: '",
+          "ts: '', relevants_slider: false, relevants_quantity: '', isFlexCols: false, isPublishedPage: true, previewmode: true, colClass: 't-col t-col_3', ratio: '', sliderthumbsside: '', showStoreBtnQuantity: '', tabs: '', galleryStyle: '', title_typo: '', descr_typo: '', price_typo: '', price_old_typo: '', menu_typo: '', options_typo: '', sku_typo: '', characteristics_typo: '', button_styles: '', button2_styles: '', buttonicon: '', buttoniconhover: '', storebreadcrumbs_styles: '', }; // emulate, get options_catalog from",
+          "s_slider: false, relevants_quantity: '', isFlexCols: false, isPublishedPage: true, previewmode: true, colClass: 't-col t-col_3', ratio: '', sliderthumbsside: '', showStoreBtnQuantity: '', tabs: '', galleryStyle: '', title_typo: '', descr_typo: '', price_typo: '', price_old_typo: '', menu_typo: '', options_typo: '', sku_typo: '', characteristics_typo: '', button_styles: '', button2_styles: '', buttonicon: '', buttoniconhover: '', storebreadcrumbs_styles: '', }; // emulate, get options_catalog from file store_catalog_"
+        ],
+        "image": [
+          "\",\"quantity\":\"0\",\"img\":\"https:\\/\\/static.tildacdn.com\\/stor6439-3036-4833-b163-326230633138\\/43830007.jpg\"}],\"characteristics\":[],\"properties\":[],\"partuids\":[287310077602],\"url\":\"https:\\/\\/svet-lotosa.tilda.ws\\/tproduct\\/296122659532-vadzhra\"}; // draw slider or show image for SEO if (window.isSearchBot) { var imgEl = document.querySelector('.js-product-img'); if (imgEl) imgEl.style.opacity = '1'; } else { var prodcard_optsObj = { hasWrap: false, txtPad: '', bgColor: '', borderRadius",
+          "le, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', cur",
+          "prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', currencyDecimal: '', b",
+          "d_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', currencyDecimal: '', btnSize: '', verti",
+          "); }); } } catch (e) { console.log('Error in relevants: ' + e); } } window.tStoreOptionsList = [{\"title\":\"Цвет\",\"params\":{\"view\":\"select\",\"hasColor\":false,\"linkImage\":true},\"values\":[{\"id\":50889991,\"value\":\"голубой\"},{\"id\":50890011,\"value\":\"индиго\"},{\"id\":50890031,\"value\":\"прозрачный\"},{\"id\":50889771,\"color\":\"#8eb8c2\",\"value\":\"прозрачный розовый\"},{\"id\":50890001,\"value\":\"розовый\"},{\"id\":50890021,\"value\":\"фиолетовый\"},{\"id\":50890041,\"value\":\"черный\"}]}]; t_onFuncLoad('"
+        ]
+      }
+    }
+  ],
+  "external_scripts": [
+    "https://static.tildacdn.com/js/tilda-scripts-3.0.min.js",
+    "https://tilda.ws/project13546221/tilda-blocks-2.7.js",
+    "https://static.tildacdn.com/js/tilda-forms-1.0.min.js",
+    "https://static.tildacdn.com/js/hammer.min.js",
+    "https://static.tildacdn.com/js/tilda-slds-1.4.min.js",
+    "https://static.tildacdn.com/js/tilda-zoom-2.0.min.js",
+    "https://static.tildacdn.com/js/tilda-cart-1.1.min.js",
+    "https://static.tildacdn.com/js/tilda-products-1.0.min.js",
+    "https://static.tildacdn.com/js/tilda-catalog-1.1.min.js",
+    "https://static.tildacdn.com/js/tilda-delivery-1.0.min.js",
+    "https://static.tildacdn.com/js/tilda-cover-1.0.min.js",
+    "https://static.tildacdn.com/js/tilda-menusub-1.0.min.js",
+    "https://static.tildacdn.com/js/tilda-animation-1.0.min.js",
+    "https://static.tildacdn.com/js/tilda-wishlist-1.0.min.js"
+  ],
+  "aggregate_identifiers": {
+    "storepartuid": [],
+    "recid": [
+      "1"
+    ],
+    "productuid": [
+      "296122659532"
+    ]
+  },
+  "aggregate_urls": [],
+  "diagnostics": []
+}

@@ -2,18 +2,115 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, asdict
+from difflib import SequenceMatcher
 from decimal import Decimal
 from typing import Any, Iterable
+from urllib.parse import quote, urlparse
+
+from backend.integrations.product_page_snapshot import load_product_page_snapshot
 
 from backend.catalog.models import Product
 from backend.catalog.collection_ranking import rank_collection
 from backend.catalog.product_intelligence import analyze_product, normalize
 from backend.catalog.product_profiles import get_product_profile
 from backend.catalog.repositories import ProductRepository
-from backend.rag.dynamic_query_router import analyze_query_semantics
+from backend.rag.dynamic_query_router import analyze_query_semantics, detect_product_kind
 
 _IMAGE_RE = re.compile(r"(?:Изображение|Фото|Image)\s*:\s*(https?://\S+)", re.IGNORECASE)
 _PRODUCT_UID_RE = re.compile(r"/tproduct/(\d+)", re.IGNORECASE)
+
+_QUERY_TOKEN_RE = re.compile(r"[0-9a-zа-яё]+", re.IGNORECASE)
+_QUERY_STOPWORDS = {
+    "в", "во", "и", "на", "по", "для", "с", "со", "из", "к", "ко",
+    "а", "ли", "есть", "имеется", "нужен", "нужна", "нужны", "хочу",
+    "купить", "заказать", "покажи", "покажите", "найди", "найдите",
+    "товар", "товары", "у", "вас", "мне", "подскажите", "все", "весь",
+}
+_KIND_WORD_PREFIXES = {
+    "стату", "статуй", "скульптур", "фигур", "амулет", "подвес", "кулон",
+    "медальон", "четк", "чётк", "мала", "ваджр", "дордж", "танк",
+    "тханк", "чаш", "благовон", "аромапал", "колоколь", "колокол",
+    "гант", "гхант",
+}
+_RUSSIAN_SUFFIXES = (
+    "иями", "ями", "ами", "ого", "ему", "ому", "ыми", "ими", "ая", "яя",
+    "ое", "ее", "ий", "ый", "ой", "ую", "юю", "ым", "им", "ам", "ям", "ах", "ях",
+    "ом", "ем", "ов", "ев", "ы", "и", "а", "я", "у", "ю", "е", "о",
+)
+
+def _stem_token(token: str) -> str:
+    value = normalize(token)
+    for suffix in _RUSSIAN_SUFFIXES:
+        if value.endswith(suffix) and len(value) - len(suffix) >= 3:
+            return value[:-len(suffix)]
+    return value
+
+def _lexical_query_terms(query: str) -> tuple[str, ...]:
+    terms: list[str] = []
+    for token in _QUERY_TOKEN_RE.findall(normalize(query)):
+        if token in _QUERY_STOPWORDS or token.isdigit():
+            continue
+        stem = _stem_token(token)
+        if any(stem.startswith(prefix) or prefix.startswith(stem) for prefix in _KIND_WORD_PREFIXES):
+            continue
+        if len(stem) >= 3 and stem not in terms:
+            terms.append(stem)
+    return tuple(terms)
+
+def _contains_stem(text: str, stem: str) -> bool:
+    for word in _QUERY_TOKEN_RE.findall(normalize(text)):
+        candidate = _stem_token(word)
+        if len(candidate) < 3:
+            continue
+        if word.startswith(stem) or stem.startswith(candidate):
+            return True
+        if SequenceMatcher(None, stem, candidate).ratio() >= 0.78:
+            return True
+    return False
+
+
+_SURFACE_KIND_PREFIX_GROUPS = (
+    ("подвес",),
+    ("кулон",),
+    ("амулет",),
+    ("медальон",),
+    ("гау",),
+    ("колоколь", "гант", "гхант"),
+)
+
+def _required_surface_kind_prefixes(query: str) -> tuple[str, ...]:
+    words = tuple(_QUERY_TOKEN_RE.findall(normalize(query)))
+    for group in _SURFACE_KIND_PREFIX_GROUPS:
+        if any(any(word.startswith(prefix) for prefix in group) for word in words):
+            return group
+    return ()
+
+def _matches_surface_kind(product: Product, query: str) -> bool:
+    prefixes = _required_surface_kind_prefixes(query)
+    if not prefixes:
+        return True
+    text = normalize(" ".join((product.title, product.category or "")))
+    words = _QUERY_TOKEN_RE.findall(text)
+    return any(any(word.startswith(prefix) for prefix in prefixes) for word in words)
+
+def _matches_lexical_constraints(product: Product, query: str) -> bool:
+    terms = _lexical_query_terms(query)
+    if not terms:
+        return True
+    searchable = " ".join((product.title, product.description or "", product.category or ""))
+    return all(_contains_stem(searchable, term) for term in terms)
+
+def _resolve_availability(product: Product, *, live_lookup: bool) -> str | None:
+    if product.availability_status:
+        return product.availability_status
+    if not live_lookup or not product.url:
+        return None
+    if urlparse(product.url).hostname != "svet-lotosa.tilda.ws":
+        return None
+    try:
+        return load_product_page_snapshot(product.url, timeout=12.0).availability_status
+    except Exception:
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +145,11 @@ def _image_url(product: Product) -> str | None:
     if explicit:
         return str(explicit)
     match = _IMAGE_RE.search(product.description or "")
-    return match.group(1).rstrip(".,;)]") if match else None
+    if match:
+        return match.group(1).rstrip(".,;)]")
+    if product.url:
+        return f"/api/sales/product-image?source={quote(product.url, safe='')}"
+    return None
 
 
 def _price(value: Decimal | None, currency: str) -> str | None:
@@ -82,7 +183,11 @@ def _matches_product(product: Product, query: str) -> bool:
         category=product.category or "",
     )
 
-    product_kind = (profile.product_type if profile else None) or intelligence.product_type
+    product_kind = (
+        (profile.product_type if profile else None)
+        or detect_product_kind(product.title)
+        or intelligence.product_type
+    )
     product_entities = {
         normalize(value)
         for value in ((profile.entities if profile else ()) or intelligence.entities)
@@ -98,13 +203,17 @@ def _matches_product(product: Product, query: str) -> bool:
         return False
     if requested_materials and not requested_materials.intersection(product_materials):
         return False
+    if not _matches_surface_kind(product, query):
+        return False
 
-    return bool(requested_kind or requested_entities or requested_materials)
+    semantic_match = bool(requested_kind or requested_entities or requested_materials)
+    return semantic_match and _matches_lexical_constraints(product, query)
 
 
 def build_product_collection(query: str, products: Iterable[Product] | None = None) -> list[CollectionItem]:
     source = list(products) if products is not None else ProductRepository().list_all()
     matched = [product for product in source if _matches_product(product, query)]
+    live_lookup = len(matched) <= 8 and bool(_lexical_query_terms(query))
 
     items: list[CollectionItem] = []
     seen: set[str] = set()
@@ -113,24 +222,29 @@ def build_product_collection(query: str, products: Iterable[Product] | None = No
         if identity in seen:
             continue
         seen.add(identity)
+        availability = _resolve_availability(product, live_lookup=live_lookup)
         items.append(CollectionItem(
             id=product.id,
             title=product.title,
             url=product.url or None,
             image_url=_image_url(product),
             price=_price(product.price, product.currency),
-            availability=(
-                product.availability_status
-                or ("В наличии" if product.available else "Под заказ / наличие уточняется")
-            ),
+            # Never convert an unknown stock state into ``В наличии``.
+            # Publication in the catalog and physical availability are
+            # independent facts.
+            availability=availability,
             material=product.material,
             size=_size(product),
             description=(product.description or "").strip() or None,
             button_label="Открыть товар",
             group=(
                 "В наличии"
-                if product.available and (product.availability_status or "").casefold() not in {"под заказ", "нет в наличии"}
+                if (availability or "").strip().casefold() == "в наличии"
+                else "Нет в наличии"
+                if (availability or "").strip().casefold() == "нет в наличии"
                 else "Под заказ"
+                if (availability or "").strip().casefold() == "под заказ"
+                else "Наличие уточняется"
             ),
             item_type="product",
         ))

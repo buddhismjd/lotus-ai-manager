@@ -1,0 +1,270 @@
+{
+  "url": "https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra",
+  "inspected_at": "2026-07-13T12:05:09+00:00",
+  "html_size": 26217,
+  "html_sha256": "b86f51dc642daae6bcda571d78e970ec1212b43bc28a02222028820f05a89b20",
+  "title": "Ваджра",
+  "canonical_url": "https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra",
+  "language": "en",
+  "evidence": [
+    {
+      "field": "title",
+      "value": "Ваджра",
+      "source": "html.title",
+      "confidence": "medium",
+      "selector": "title"
+    },
+    {
+      "field": "title",
+      "value": "Ваджра",
+      "source": "open_graph",
+      "confidence": "high",
+      "selector": "meta[property='og:title']"
+    },
+    {
+      "field": "description",
+      "value": "Товары для буддийского алтаря",
+      "source": "open_graph",
+      "confidence": "medium",
+      "selector": "meta[property='og:description']"
+    },
+    {
+      "field": "image",
+      "value": "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg",
+      "source": "open_graph",
+      "confidence": "high",
+      "selector": "meta[property='og:image']"
+    }
+  ],
+  "open_graph": {
+    "og:title": "Ваджра",
+    "og:description": "Товары для буддийского алтаря",
+    "og:type": "website",
+    "og:url": "https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra",
+    "og:image": "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg"
+  },
+  "meta": {
+    "viewport": "width=device-width, initial-scale=1.0",
+    "description": "Товары для буддийского алтаря",
+    "keywords": "Важдра купить, купить буддийскую символику, онлайн магазин буддийских товаров, ваджра",
+    "og:title": "Ваджра",
+    "og:description": "Товары для буддийского алтаря",
+    "og:type": "website",
+    "og:url": "https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra",
+    "og:image": "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg",
+    "productID": "296122659532",
+    "image": "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg",
+    "serialNumber": "296122659532",
+    "sku": "Vadzhra-25000",
+    "price": "25000.00",
+    "priceCurrency": "RUB",
+    "caption": "Важдра, купить буддийскую символику, онлайн магазин буддийских товаров"
+  },
+  "json_ld": [],
+  "json_ld_errors": [],
+  "breadcrumb_candidates": [],
+  "images": [
+    {
+      "url": "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg",
+      "source": "meta.og:image",
+      "alt": null,
+      "width": null,
+      "height": null
+    }
+  ],
+  "characteristics": {},
+  "data_attributes": {
+    "data-hook": [
+      "blocks-collection-content-node"
+    ],
+    "data-product-lid": [
+      "296122659532"
+    ],
+    "data-product-price-def": [
+      "25000.0000"
+    ],
+    "data-product-price-def-str": [
+      "25000,00"
+    ],
+    "data-product-uid": [
+      "296122659532"
+    ],
+    "data-slide-direction": [
+      "left",
+      "right"
+    ],
+    "data-tilda-formskey": [
+      "8f9e99611f452fc4c7100b7f13546221"
+    ],
+    "data-tilda-project-id": [
+      "13546221"
+    ],
+    "data-tilda-root-zone": [
+      "com"
+    ]
+  },
+  "scripts": [
+    {
+      "index": 1,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 2,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 3,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 4,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 5,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 6,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 7,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 8,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 9,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 10,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 11,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 12,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 13,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 14,
+      "script_type": "text/javascript",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 15,
+      "script_type": "text/javascript",
+      "size": 1168,
+      "sha256": "47fb6fa05a4288cfba1177df34378c301c01a8c2d18948a1100ffe4c6db81724",
+      "json_valid": false,
+      "detected_tokens": [],
+      "parse_error": null
+    },
+    {
+      "index": 16,
+      "script_type": "text/javascript",
+      "size": 8129,
+      "sha256": "9de297dc0e7ef4936bb2dd4f0bd94515c66ed1d162078776e4fd362fd21615f8",
+      "json_valid": false,
+      "detected_tokens": [
+        "storepartuid",
+        "recid",
+        "productuid",
+        "t-store",
+        "tilda"
+      ],
+      "parse_error": null
+    }
+  ],
+  "tilda_tokens": {
+    "storepartuid": 1,
+    "recid": 3,
+    "productuid": 1,
+    "t-store": 24,
+    "tilda": 80
+  },
+  "diagnostics": [
+    "На странице не найден валидный JSON-LD.",
+    "Breadcrumb не обнаружен ни в JSON-LD, ни в DOM.",
+    "Статус наличия не подтверждён ни одним исследованным источником."
+  ]
+}

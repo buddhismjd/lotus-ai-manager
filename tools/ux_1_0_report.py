@@ -1,0 +1,5 @@
+print("UX-1.0 Tour Direction and Product Media")
+print("=======================================")
+print("Legacy tours: country inferred from structured fields, title, description and URL")
+print("Products: missing catalog image resolved lazily from the official Tilda product page")
+print("Security: media resolver accepts only the official svet-lotosa.tilda.ws HTTPS host")

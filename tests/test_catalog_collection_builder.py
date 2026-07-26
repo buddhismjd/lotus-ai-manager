@@ -83,6 +83,7 @@ def test_collection_items_are_ranked_and_grouped() -> None:
             url="https://example.com/white-tara",
             description="Белая Тара, бронза.",
             available=True,
+            availability_status="В наличии",
             image_url="https://example.com/white-tara.jpg",
         ),
     ]

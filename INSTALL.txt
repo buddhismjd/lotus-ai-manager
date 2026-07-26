@@ -1,0 +1,17 @@
+AI Bodhi CATALOG-1.0
+
+1. Распакуйте архив в корень D:\Lotus-AI-Manager-v0.5 с заменой файлов.
+2. Выполните:
+
+.venv\Scripts\activate.bat
+python -m pytest -q
+
+3. Остановите старый сервер: Ctrl+C
+4. Запустите:
+
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8001
+
+5. Откройте новый диалог и проверьте:
+
+Подвеска с бесконечным узлом есть?
+Колокольчик с ваджрой есть?

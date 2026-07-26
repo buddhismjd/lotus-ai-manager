@@ -1,0 +1,20 @@
+{
+  "id": "podveski-svet-lotosa-tproduct-123017241832-zheleznii-amulet-phurba-dordzhe",
+  "source_type": "tilda",
+  "type": "product",
+  "title": "Железный амулет \"Пхурба Дордже\"",
+  "url": "https://svet-lotosa.tilda.ws/podveski-svet-lotosa/tproduct/123017241832-zheleznii-amulet-phurba-dordzhe",
+  "enabled": true,
+  "priority": 130,
+  "summary": "Железный амулет \"Пхурба Дордже\"\nКатегория: Подвески\nЦена: 450.00 RUR\nЖелезный амулет \"Пхурба Дордже\" с металлической цепочкой.\nШирина 1,5 см.\nВысота: 5,5 см",
+  "content": "Железный амулет \"Пхурба Дордже\"\nКатегория: Подвески\nЦена: 450.00 RUR\nЖелезный амулет \"Пхурба Дордже\" с металлической цепочкой.\nШирина 1,5 см.\nВысота: 5,5 см",
+  "content_hash": "7f76355a42d7a92e3503671c43d7c3afd63a97098a15a8a804e0c539ec62d49c",
+  "chunks": [
+    "Железный амулет \"Пхурба Дордже\"\nКатегория: Подвески\nЦена: 450.00 RUR\nЖелезный амулет \"Пхурба Дордже\" с металлической цепочкой.\nШирина 1,5 см.\nВысота: 5,5 см"
+  ],
+  "metadata": {
+    "chars": 156,
+    "chunks_count": 1,
+    "classification_source": "tilda_yml"
+  }
+}

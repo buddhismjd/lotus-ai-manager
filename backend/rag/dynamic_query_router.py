@@ -137,6 +137,12 @@ PRODUCT_KIND_ALIASES = {
         "благовония",
         "аромапалочки",
     },
+    "bell": {
+        "колокольчик",
+        "колокол",
+        "ганта",
+        "гханта",
+    },
 }
 
 
@@ -173,6 +179,11 @@ PRODUCT_KIND_PREFIXES = {
         "благовон",
         "аромапал",
     ),
+    "bell": (
+        "колоколь",
+        "гант",
+        "гхант",
+    ),
 }
 
 
@@ -193,8 +204,8 @@ def analyze_query_semantics(text: str) -> dict[str, object]:
 
     return {
         "product_kind": (
-            _canonical_product_kind(intelligence.product_type)
-            or detect_product_kind(text)
+            detect_product_kind(text)
+            or _canonical_product_kind(intelligence.product_type)
         ),
         "entities": {
             normalize(entity)

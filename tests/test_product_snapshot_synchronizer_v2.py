@@ -61,7 +61,7 @@ def test_normalizes_only_confirmed_fields() -> None:
     assert item.category is None
     assert item.material is None
     assert item.height_cm is None
-    assert item.availability_status is None
+    assert item.availability_status == "Нет в наличии"
 
 
 def test_raw_snapshot_is_deterministic() -> None:

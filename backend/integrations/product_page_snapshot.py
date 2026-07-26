@@ -11,6 +11,9 @@ from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
 
+from backend.integrations.product_raw_snapshot import extract_product_object
+from backend.integrations.product_stock_status import resolve_stock_status
+
 
 _SPACE_RE = re.compile(r"\s+")
 _MATERIAL_RE = re.compile(
@@ -149,7 +152,13 @@ def _extract_status(soup: BeautifulSoup, schema: dict[str, Any] | None) -> str |
         if availability in _SCHEMA_STATUS:
             return _SCHEMA_STATUS[availability]
     visible_text = _clean_text(soup.get_text(" ", strip=True))
+    # Full-page Tilda markup contains generic shop labels such as
+    # "В наличии" that are not proof for the current product.  Negative and
+    # preorder labels are safe fallbacks; a positive status must come from the
+    # selected product object or Product schema.
     for pattern, status in _STATUS_PATTERNS:
+        if status == "В наличии":
+            continue
         if pattern.search(visible_text):
             return status
     return None
@@ -199,16 +208,39 @@ def _extract_material(schema: dict[str, Any] | None, description: str | None, vi
     return None
 
 
+def _script_product_status(raw_html: str, page_url: str) -> str | None:
+    uid_match = re.search(r"/tproduct/(?P<uid>\d+)(?:[-/]|$)", page_url, re.IGNORECASE)
+    expected_uid = uid_match.group("uid") if uid_match else None
+    try:
+        product, _ = extract_product_object(raw_html, expected_uid=expected_uid)
+    except ValueError:
+        return None
+    return resolve_stock_status(
+        explicit_status=(
+            product.get("availability_status")
+            or product.get("availability")
+            or product.get("stock_status")
+        ),
+        quantity=product.get("quantity"),
+    )
+
+
 def parse_product_page(raw_html: str, page_url: str) -> ProductPageSnapshot:
     soup = BeautifulSoup(raw_html, "lxml")
     schema = _product_schema(soup)
     description = _extract_description(soup, schema)
     visible_text = _clean_text(soup.get_text(" ", strip=True))
     price, currency = _extract_price(schema)
+    visible_status = _extract_status(soup, schema)
+    script_status = _script_product_status(raw_html, page_url)
+    # A visible, product-page label such as «Под заказ» or «Нет в наличии»
+    # is more specific than Tilda's generic quantity=0 flag. Positive
+    # availability is still accepted only from Product schema or product data.
+    availability_status = visible_status or script_status
     return ProductPageSnapshot(
         url=page_url,
         image_url=_extract_image(soup, schema, page_url),
-        availability_status=_extract_status(soup, schema),
+        availability_status=availability_status,
         material=_extract_material(schema, description, visible_text),
         price=price,
         currency=currency,

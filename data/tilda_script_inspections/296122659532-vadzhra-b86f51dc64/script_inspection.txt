@@ -1,0 +1,81 @@
+==============================================================================
+AI BODHI TILDA SCRIPT INSPECTOR
+==============================================================================
+URL:          https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra
+Inspected at: 2026-07-13T12:15:15+00:00
+HTML bytes:   26217
+HTML SHA256:  b86f51dc642daae6bcda571d78e970ec1212b43bc28a02222028820f05a89b20
+
+AGGREGATE IDENTIFIERS
+------------------------------------------------------------------------------
+storepartuid: NOT FOUND
+recid: 1
+productuid: 296122659532
+
+DISCOVERED URLS
+------------------------------------------------------------------------------
+No API/product URLs found in inline scripts.
+
+SCRIPT INVENTORY
+------------------------------------------------------------------------------
+Script #16: type=text/javascript size=8129 tokens=storepartuid,recid,productuid,t-store,tilda,price,image assignments=12 urls=0
+  assignment options: kind=object size=2 json_valid=True sha256=44136fa355b3
+    preview: {}
+  assignment product: kind=object size=2091 json_valid=True sha256=0b7a0e39eda8
+    preview: {"uid":296122659532,"rootpartid":23168782,"title":"Ваджра","brand":"Тибет","text":"Нерушимость просветленного состояния.<br \/><br \/>Ритуальный и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это символ, напоминающий жезл или скипетр, часто с несколькими концами, и ассоциируется с молнией и алмазом, символизируя духовную силу, непоколебимость и защиту.","sku":"Vadzhra-25000","price":"25000.0000","gallery":[{"alt":"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров","img":"https:\/\/static.ti
+  assignment prodcard_optsObj: kind=object size=297 json_valid=False sha256=d8346dfddd28
+    preview: { hasWrap: false, txtPad: '', bgColor: '', borderRadius: '', shadowSize: '0px', shadowOpacity: '', shadowSizeHover: '', shadowOpacityHover: '', shadowShiftyHover: '', btnTitle1: '', btnLink1: '', btnTitle2: '', btnLink2: '', showOpts: false}
+  assignment price_optsObj: kind=object size=73 json_valid=False sha256=d0a21dc939cb
+    preview: { color: '', colorOld: '', fontSize: '', fontWeight: '' }
+  assignment popup_optsObj: kind=object size=286 json_valid=False sha256=17ce2f9ce1e0
+    preview: { columns: '', columns2: '', isVertical: '', align: '', btnTitle: '_Buy_now_', closeText: '', iconColor: '', containerBgColor: '', overlayBgColorRgba: '', popupStat: '', popupContainer: '', fixedButton: false, mobileGalleryStyle: '' }
+  assignment slider_optsObj: kind=object size=122 json_valid=False sha256=6a1b4dfba5f5
+    preview: { anim_speed: '', arrowColor: '', videoPlayerIconColor: '', cycle: '', controls: '', bgcolor: '' }
+  assignment slider_dotsOptsObj: kind=object size=76 json_valid=False sha256=b40435001c3a
+    preview: { size: '', bgcolor: '', bordersize: '', bgcoloractive: '' }
+  assignment slider_slidesOptsObj: kind=object size=58 json_valid=False sha256=4f50abd1e9ef
+    preview: { zoomable: false, bgsize: '', ratio: '0.75' }
+  assignment typography_optsObj: kind=object size=42 json_valid=False sha256=34dce2aac367
+    preview: { descrColor: '', titleColor: '' }
+  assignment default_sortObj: kind=object size=22 json_valid=False sha256=4408ed22dac6
+    preview: { in_stock: false}
+  assignment options_catalog: kind=object size=1405 json_valid=False sha256=4ad24cda5f1b
+    preview: { btn1_style: btn1_style, btn2_style: btn2_style, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '',
+  assignment window.tStoreOptionsList: kind=array size=361 json_valid=True sha256=546b442198bf
+    preview: [{"title":"Цвет","params":{"view":"select","hasColor":false,"linkImage":true},"values":[{"id":50889991,"value":"голубой"},{"id":50890011,"value":"индиго"},{"id":50890031,"value":"прозрачный"},{"id":50889771,"color":"#8eb8c2","value":"прозрачный розовый"},{"id":50890001,"value":"розовый"},{"id":50890021,"value":"фиолетовый"},{"id":50890041,"value":"черный"}]}]
+  snippet[storepartuid#1]: рный"}]}]; t_onFuncLoad('t_store_productInit', function() { t_store_productInit(recid, options, product); }); // if user coming from catalog redirect back to main page if (window.history.state && (window.history.state.productData || window.history.state.storepartuid)) { window.onpopstate = function() { window.history.replaceState(null, null, window.location.origin); window.location.replace(window.location.origin); }; } });
+  snippet[recid#1]: t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {"uid":296122659532,"rootpartid":23168782,"title":"Ваджра","brand":"Тибет","text":"Нерушимость просветленного состояния.<br \/><br \/>Ритуальный и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это с
+  snippet[recid#2]: levantsMethod = 'category_' + options.showRelevants; break; } t_onFuncLoad('t_store_loadProducts', function() { t_store_loadProducts( 'relevants', recid, options, false, { currentProductUid: '296122659532', relevantsQuantity: itemsCount, relevantsMethod: relevantsMeth
+  snippet[recid#3]: ue":"индиго"},{"id":50890031,"value":"прозрачный"},{"id":50889771,"color":"#8eb8c2","value":"прозрачный розовый"},{"id":50890001,"value":"розовый"},{"id":50890021,"value":"фиолетовый"},{"id":50890041,"value":"черный"}]}]; t_onFuncLoad('t_store_productInit', function() { t_store_productInit(recid, options, product); }); // if user coming from catalog redirect back to main page if (window.history.state && (window.history.state.productData || window.history.state.storepartuid)) { window.onpopstate = function() { window.history.replaceState(
+  snippet[productuid#1]: _loadProducts', function() { t_store_loadProducts( 'relevants', recid, options, false, { currentProductUid: '296122659532', relevantsQuantity: itemsCount, relevantsMethod: relevantsMethod, relevantsSort: 'random' } ); });
+  snippet[t-store#1]: up_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', currencyDecimal: '', btnSize: '', verticalAlignButtons: fal
+  snippet[tilda#1]: t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {"uid":296122659532,"rootpartid":23168782,"title":"Ваджра","brand":"Тибет","text":"Нерушимость просветленного состояния.<b
+  snippet[tilda#2]: t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {"uid":296122659532,"rootpartid":23168782,"title":"Ваджра","brand":"Тибет","text":"Нерушимость просветленного состояния.<br \/><br \/>Ритуальный и мифологич
+  snippet[tilda#3]: t_onReady(function() { var tildacopyEl = document.getElementById('tildacopy'); if (tildacopyEl) tildacopyEl.style.display = 'none'; var recid = '1'; var options = {}; var product = {"uid":296122659532,"rootpartid":23168782,"title":"Ваджра","brand":"Тибет","text":"Нерушимость просветленного состояния.<br \/><br \/>Ритуальный и мифологический предмет, имеющий важное
+  snippet[price#1]: й и мифологический предмет, имеющий важное значение в индуизме, буддизме и джайнизме. Обычно это символ, напоминающий жезл или скипетр, часто с несколькими концами, и ассоциируется с молнией и алмазом, символизируя духовную силу, непоколебимость и защиту.","sku":"Vadzhra-25000","price":"25000.0000","gallery":[{"alt":"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров","img":"https:\/\/static.tildacdn.com\/stor6439-3036-4833-b163-326230633138\/43830007.jpg"},{"alt":"Важдра, купить буддийскую символику, онлайн магазин буддийских товаров","img":"https:\/\/static.tildacdn.com\/stor6
+  snippet[price#2]: -6431-4862-b136-653830633936\/86233978.jpg"}],"sort":1000500,"quantity":"0","portion":0,"newsort":0,"json_chars":"null","externalid":"9PS8NGsnYi0ryFaHb7jF","pack_label":"lwh","pack_x":230,"pack_y":0,"pack_z":0,"pack_m":0,"serverid":"master","servertime":"1774374735.2005","parentuid":"","editions":[{"uid":296122659532,"price":"25 000.00","priceold":"","sku":"Vadzhra-25000","quantity":"0","img":"https:\/\/static.tildacdn.com\/stor6439-3036-4833-b163-326230633138\/43830007.jpg"}],"characteristics":[],"properties":[],"partuids":[287310077602],"url":"https:\/\/svet-lotosa.tilda.ws\/tproduct\/296122659532-vadzhra"};
+  snippet[price#3]: 30633936\/86233978.jpg"}],"sort":1000500,"quantity":"0","portion":0,"newsort":0,"json_chars":"null","externalid":"9PS8NGsnYi0ryFaHb7jF","pack_label":"lwh","pack_x":230,"pack_y":0,"pack_z":0,"pack_m":0,"serverid":"master","servertime":"1774374735.2005","parentuid":"","editions":[{"uid":296122659532,"price":"25 000.00","priceold":"","sku":"Vadzhra-25000","quantity":"0","img":"https:\/\/static.tildacdn.com\/stor6439-3036-4833-b163-326230633138\/43830007.jpg"}],"characteristics":[],"properties":[],"partuids":[287310077602],"url":"https:\/\/svet-lotosa.tilda.ws\/tproduct\/296122659532-vadzhra"};
+  snippet[image#1]: ","quantity":"0","img":"https:\/\/static.tildacdn.com\/stor6439-3036-4833-b163-326230633138\/43830007.jpg"}],"characteristics":[],"properties":[],"partuids":[287310077602],"url":"https:\/\/svet-lotosa.tilda.ws\/tproduct\/296122659532-vadzhra"}; // draw slider or show image for SEO if (window.isSearchBot) { var imgEl = document.querySelector('.js-product-img'); if (imgEl) imgEl.style.opacity = '1'; } else { var prodcard_optsObj = { hasWrap: false, txtPad: '', bgColor: '', borderRadius
+  snippet[image#2]: le, storepart: '', prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', cur
+  snippet[image#3]: prodCard: prodcard_optsObj, popup_opts: popup_optsObj, defaultSort: default_sortObj, slider_opts: slider_optsObj, slider_dotsOpts: slider_dotsOptsObj, slider_slidesOpts: slider_slidesOptsObj, typo: typography_optsObj, price: price_optsObj, blocksInRow: '', imageHover: false, imageHeight: '', imageRatioClass: 't-store__card__imgwrapper_4-3', align: '', vindent: '', isHorizOnMob:false, itemsAnim: '', hasOriginalAspectRatio: false, markColor: '', markBgColor: '', currencySide: 'r', currencyTxt: 'р.', currencySeparator: ',', currencyDecimal: '', b
+
+EXTERNAL SCRIPTS
+------------------------------------------------------------------------------
+- https://static.tildacdn.com/js/tilda-scripts-3.0.min.js
+- https://tilda.ws/project13546221/tilda-blocks-2.7.js
+- https://static.tildacdn.com/js/tilda-forms-1.0.min.js
+- https://static.tildacdn.com/js/hammer.min.js
+- https://static.tildacdn.com/js/tilda-slds-1.4.min.js
+- https://static.tildacdn.com/js/tilda-zoom-2.0.min.js
+- https://static.tildacdn.com/js/tilda-cart-1.1.min.js
+- https://static.tildacdn.com/js/tilda-products-1.0.min.js
+- https://static.tildacdn.com/js/tilda-catalog-1.1.min.js
+- https://static.tildacdn.com/js/tilda-delivery-1.0.min.js
+- https://static.tildacdn.com/js/tilda-cover-1.0.min.js
+- https://static.tildacdn.com/js/tilda-menusub-1.0.min.js
+- https://static.tildacdn.com/js/tilda-animation-1.0.min.js
+- https://static.tildacdn.com/js/tilda-wishlist-1.0.min.js
+
+DIAGNOSTICS
+------------------------------------------------------------------------------
+No structural warnings.

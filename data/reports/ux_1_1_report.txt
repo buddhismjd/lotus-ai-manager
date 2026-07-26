@@ -1,0 +1,8 @@
+UX-1.1 Quality Report
+=====================
+- Product intent: bell / ganta queries route to products.
+- Product cards: bell queries return matching product cards.
+- Tour descriptions: Tilda navigation lines are removed.
+- Tour media: missing images use the safe page-image resolver.
+- Context: a single tour shown by country is remembered for follow-up questions.
+- Regression: 325 tests passed.

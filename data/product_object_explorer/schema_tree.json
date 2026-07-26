@@ -1,0 +1,495 @@
+{
+  "children": {
+    "characteristics": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 0,
+      "products": 88,
+      "samples": [
+        {
+          "items": 0
+        }
+      ],
+      "types": {
+        "array": 88
+      }
+    },
+    "editions": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        {
+          "items": 1
+        }
+      ],
+      "types": {
+        "array": 88
+      }
+    },
+    "editions[]": {
+      "children": {
+        "img": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            "https://static.tildacdn.com/stor3336-3264-4761-b337-386366663134/18179979.jpg",
+            "https://static.tildacdn.com/stor3263-3862-4466-a337-343565383836/78352643.jpg",
+            "https://static.tildacdn.com/stor6338-3563-4236-b933-633566396337/33415362.jpg",
+            "https://static.tildacdn.com/stor3932-3362-4533-b465-386239363633/61482533.jpg",
+            "https://static.tildacdn.com/stor6132-6664-4538-a664-653739356535/57321845.jpg"
+          ],
+          "types": {
+            "string": 88
+          }
+        },
+        "price": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            "15 000.00",
+            "10 100.00",
+            "8 600.00",
+            "21 900.00",
+            "13 000.00"
+          ],
+          "types": {
+            "string": 88
+          }
+        },
+        "priceold": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 0,
+          "products": 88,
+          "samples": [
+            ""
+          ],
+          "types": {
+            "string": 88
+          }
+        },
+        "quantity": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            "0"
+          ],
+          "types": {
+            "string": 88
+          }
+        },
+        "sku": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            "Dzambala-15000",
+            "Buddha-SHak'ya-10100",
+            "Garuda-8600",
+            "Zashhitnik-21900",
+            "Bodkhisattva-SHerab-13000-3"
+          ],
+          "types": {
+            "string": 88
+          }
+        },
+        "uid": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            118154452592,
+            121236854172,
+            137622147322,
+            138863029462,
+            149528185652
+          ],
+          "types": {
+            "integer": 88
+          }
+        }
+      },
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        {
+          "keys": [
+            "img",
+            "price",
+            "priceold",
+            "quantity",
+            "sku",
+            "uid"
+          ]
+        }
+      ],
+      "types": {
+        "object": 88
+      }
+    },
+    "externalid": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "LALBjPt6UtRhITivYtLK",
+        "02gvnpTEixzEYf7LvXFl",
+        "dLi8nvEkvuDK9j7LcRjG",
+        "kIX10ipvjR2cYjI0H5Gd",
+        "ls9dRZ9V8fsHzlvs9ijP"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "gallery": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        {
+          "items": 1
+        },
+        {
+          "items": 3
+        },
+        {
+          "items": 4
+        },
+        {
+          "items": 5
+        },
+        {
+          "items": 2
+        }
+      ],
+      "types": {
+        "array": 88
+      }
+    },
+    "gallery[]": {
+      "children": {
+        "img": {
+          "coverage_percent": 100.0,
+          "non_empty_products": 88,
+          "products": 88,
+          "samples": [
+            "https://static.tildacdn.com/stor3336-3264-4761-b337-386366663134/18179979.jpg",
+            "https://static.tildacdn.com/stor3263-3862-4466-a337-343565383836/78352643.jpg",
+            "https://static.tildacdn.com/stor6338-3563-4236-b933-633566396337/33415362.jpg",
+            "https://static.tildacdn.com/stor3932-3362-4533-b465-386239363633/61482533.jpg",
+            "https://static.tildacdn.com/stor3936-3134-4665-b862-373232343332/74907571.jpg"
+          ],
+          "types": {
+            "string": 190
+          }
+        }
+      },
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        {
+          "keys": [
+            "img"
+          ]
+        }
+      ],
+      "types": {
+        "object": 190
+      }
+    },
+    "json_chars": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "null"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "newsort": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "pack_label": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "lwh"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "pack_m": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "pack_x": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "pack_y": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "pack_z": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "parentuid": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 0,
+      "products": 88,
+      "samples": [
+        ""
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "partuids": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        {
+          "items": 1
+        }
+      ],
+      "types": {
+        "array": 88
+      }
+    },
+    "partuids[]": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        979629845002
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "portion": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        0
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "price": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "15000.0000",
+        "10100.0000",
+        "8600.0000",
+        "21900.0000",
+        "13000.0000"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "properties": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 0,
+      "products": 88,
+      "samples": [
+        {
+          "items": 0
+        }
+      ],
+      "types": {
+        "array": 88
+      }
+    },
+    "quantity": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "0"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "rootpartid": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        23168782
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "serverid": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "master"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "servertime": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "1775740032.71",
+        "1775740112.5861",
+        "1775740067.8666",
+        "1775740193.3338",
+        "1775740074.2538"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "sku": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "Dzambala-15000",
+        "Buddha-SHak'ya-10100",
+        "Garuda-8600",
+        "Zashhitnik-21900",
+        "Bodkhisattva-SHerab-13000-3"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "sort": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        1002200,
+        1030500,
+        1013100,
+        1036200,
+        1014400
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "text": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "Тибет. Высота 20 см",
+        "Статуя Будды мастера Гаутама Шакья. Непал. Высота 9.5 см. Медь.",
+        "Тибет. Высота 17 см",
+        "Непал. Высота 12 см. Бронза.<br /><em>Работа потомственного мастера Гаутама Шакья из деревни мастеров в Патане.</em><br /><em>Можно также заполнить квалифицированным ламой и благос",
+        "Статуя Бодхисаттвы мастера Джимпа Шераб. Тибет. Высота 21 см. Бронза"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "title": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "Статуя Дзамбалы",
+        "Статуя Будды",
+        "Статуя Гаруды",
+        "Статуя Защитника Махакалы",
+        "Статуя Бодхисаттвы"
+      ],
+      "types": {
+        "string": 88
+      }
+    },
+    "uid": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        118154452592,
+        121236854172,
+        137622147322,
+        138863029462,
+        149528185652
+      ],
+      "types": {
+        "integer": 88
+      }
+    },
+    "url": {
+      "coverage_percent": 100.0,
+      "non_empty_products": 88,
+      "products": 88,
+      "samples": [
+        "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/118154452592-statuya-dzambali",
+        "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/121236854172-statuya-buddi",
+        "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/137622147322-statuya-garudi",
+        "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/138863029462-statuya-zaschitnika-mahakali",
+        "https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/149528185652-statuya-bodhisattvi"
+      ],
+      "types": {
+        "string": 88
+      }
+    }
+  }
+}

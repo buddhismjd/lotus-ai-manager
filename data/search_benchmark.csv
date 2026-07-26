@@ -1,0 +1,18 @@
+﻿query,passed,intent,confidence,reason,matched_title,matched_url,errors
+Хочу статую Будды,True,product,0.99,dynamic_product_match,Cтатуя Будды Амитабхи,https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/282449042762-ctatuya-buddi-amitabhi,
+Ищу амулет Будды,True,product,0.99,dynamic_product_match,Амулет с Буддой,https://svet-lotosa.tilda.ws/podveski-svet-lotosa/tproduct/657738846742-amulet-s-buddoi,
+Нужны четки,True,product,0.8500000000000001,dynamic_product_match,Коралловые четки,https://svet-lotosa.tilda.ws/chetki-svet-lotosa/tproduct/991322601372-korallovie-chetki,
+Есть ваджра?,True,product,0.8500000000000001,dynamic_product_match,Ваджра,https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra,
+Покажи тханку,True,product,0.82,store_request_without_match,,,
+Нужна поющая чаша,True,product,0.82,store_request_without_match,,,
+Хочу на Кайлас,True,tour,0.99,dynamic_tour_match,Тибет + Кайлас — 18 дней,https://svet-lotosa.tilda.ws/18-dney-tur-tibet-kailas-22-sent-9-oct,
+Поход в Лапчи,False,tour,0.88,generic_tour_request,,,"title: ожидалось вхождение 'Лапчи', получено None"
+Есть поездка в Непал?,False,tour,0.88,generic_tour_request,,,title: совпадение не найдено
+Хочу защитный амулет,True,product,0.99,dynamic_product_match,"Железный амулет ""Пхурба Дордже""",https://svet-lotosa.tilda.ws/podveski-svet-lotosa/tproduct/123017241832-zheleznii-amulet-phurba-dordzhe,
+Белая Тара,True,product,0.99,dynamic_product_match,Статуя Белой Тары,https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/384940676312-statuya-beloi-tari,
+Статуя Зеленой Тары,True,product,0.99,dynamic_product_match,Статуя Зеленой Тары,https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/822318660592-statuya-zelenoi-tari,
+Амулет Ченрезига,True,product,0.82,store_request_without_match,,,
+Есть велосипед?,True,unknown,0.25,no_safe_route,,,
+стату будды,True,product,0.99,dynamic_product_match,Cтатуя Будды Амитабхи,https://svet-lotosa.tilda.ws/svet-lotosa-shop/tproduct/282449042762-ctatuya-buddi-amitabhi,
+четкии,True,product,0.8500000000000001,dynamic_product_match,Коралловые четки,https://svet-lotosa.tilda.ws/chetki-svet-lotosa/tproduct/991322601372-korallovie-chetki,
+кайлос,True,tour,0.99,dynamic_tour_match,Тибет + Кайлас — 18 дней,https://svet-lotosa.tilda.ws/18-dney-tur-tibet-kailas-22-sent-9-oct,

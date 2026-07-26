@@ -62,7 +62,7 @@ def test_raw_snapshot_preserves_unknown_fields_and_source_metadata() -> None:
     assert snapshot.product_data["unknown_future_field"] == {"master": "A"}
     assert json.loads(snapshot.raw_json)["unknown_future_field"] == {"master": "A"}
     assert snapshot.source_kind == "product_page_script"
-    assert snapshot.extractor_version == "2.1"
+    assert snapshot.extractor_version == "2.2"
 
 
 def test_storage_preserves_full_raw_json_and_metadata(tmp_path, monkeypatch) -> None:
@@ -82,4 +82,14 @@ def test_storage_preserves_full_raw_json_and_metadata(tmp_path, monkeypatch) -> 
     assert stored["brand"] == "Тибет"
     assert stored["unknown_future_field"] == {"master": "A"}
     assert row["source_kind"] == "product_page_script"
-    assert row["extractor_version"] == "2.1"
+    assert row["extractor_version"] == "2.2"
+
+
+def test_raw_snapshot_selects_uid_from_tproduct_url() -> None:
+    html = """
+    <script>var product = {"uid": 111, "title": "Другой", "quantity": "4"};</script>
+    <script>var product = {"uid": 222, "title": "Нужный", "quantity": "0"};</script>
+    """
+    snapshot = build_raw_snapshot(html, "https://example.test/tproduct/222-needed")
+    assert snapshot.product_uid == "222"
+    assert snapshot.product_data["title"] == "Нужный"

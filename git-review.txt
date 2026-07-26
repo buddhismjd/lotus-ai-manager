@@ -1,0 +1,6 @@
+D	backend/knowledge/__pycache__/answering.cpython-312.pyc
+D	backend/knowledge/__pycache__/aspect_migration.cpython-312.pyc
+D	backend/knowledge/__pycache__/aspect_registry.cpython-312.pyc
+D	backend/knowledge/__pycache__/graph.cpython-312.pyc
+D	backend/knowledge/__pycache__/knowledge_advisor.cpython-312.pyc
+D	backend/knowledge/__pycache__/knowledge_core.cpython-312.pyc

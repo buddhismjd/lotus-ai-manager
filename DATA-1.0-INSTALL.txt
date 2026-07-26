@@ -1,0 +1,16 @@
+AI BODHI DATA-1.0 — достоверный статус наличия
+
+1. Распаковать архив в корень проекта с заменой файлов.
+2. Выполнить:
+
+.venv\Scripts\activate.bat
+python -m pytest -q
+python -m backend.integrations.product_snapshot_synchronizer_v2
+REFRESH_PRODUCT_CATALOG.bat
+python tools\data_1_0_catalog_stock_audit.py
+
+Ожидается:
+333 passed
+Mismatches: 0
+
+После этого полностью перезапустить сервер и открыть новый диалог.

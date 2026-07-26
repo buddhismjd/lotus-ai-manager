@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from backend.integrations.product_raw_snapshot import RawProductSnapshot
+from backend.integrations.product_stock_status import resolve_stock_status
 
 
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -107,6 +108,14 @@ def normalize_raw_snapshot(snapshot: RawProductSnapshot) -> NormalizedProductSna
         partuids=partuids,
         source_hash=snapshot.snapshot_sha256,
         captured_at=snapshot.captured_at,
+        availability_status=resolve_stock_status(
+            explicit_status=(
+                data.get("availability_status")
+                or data.get("availability")
+                or data.get("stock_status")
+            ),
+            quantity=data.get("quantity"),
+        ),
     )
 
 

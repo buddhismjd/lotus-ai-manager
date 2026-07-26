@@ -1,0 +1,58 @@
+{
+  "all_paths": 36,
+  "characteristics": {
+    "labels": {},
+    "products_with_entries": 0,
+    "shapes": {},
+    "total_entries": 0
+  },
+  "editions": {
+    "labels": {},
+    "products_with_entries": 88,
+    "shapes": {
+      "img|price|priceold|quantity|sku|uid": 88
+    },
+    "total_entries": 88
+  },
+  "generated_at": "2026-07-13T13:59:23+00:00",
+  "invalid_products": 0,
+  "products_with_editions": 88,
+  "products_with_non_empty_characteristics": 0,
+  "products_with_non_empty_properties": 0,
+  "properties": {
+    "labels": {},
+    "products_with_entries": 0,
+    "shapes": {},
+    "total_entries": 0
+  },
+  "top_level_fields": {
+    "characteristics": 88,
+    "editions": 88,
+    "externalid": 88,
+    "gallery": 88,
+    "json_chars": 88,
+    "newsort": 88,
+    "pack_label": 88,
+    "pack_m": 88,
+    "pack_x": 88,
+    "pack_y": 88,
+    "pack_z": 88,
+    "parentuid": 88,
+    "partuids": 88,
+    "portion": 88,
+    "price": 88,
+    "properties": 88,
+    "quantity": 88,
+    "rootpartid": 88,
+    "serverid": 88,
+    "servertime": 88,
+    "sku": 88,
+    "sort": 88,
+    "text": 88,
+    "title": 88,
+    "uid": 88,
+    "url": 88
+  },
+  "total_products": 88,
+  "valid_products": 88
+}

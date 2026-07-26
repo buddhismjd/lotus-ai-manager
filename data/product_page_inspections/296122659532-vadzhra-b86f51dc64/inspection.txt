@@ -1,0 +1,63 @@
+==============================================================================
+AI BODHI PRODUCT PAGE INSPECTOR
+==============================================================================
+URL:          https://svet-lotosa.tilda.ws/tproduct/296122659532-vadzhra
+Inspected at: 2026-07-13T12:05:09+00:00
+HTML bytes:   26217
+HTML SHA256:  b86f51dc642daae6bcda571d78e970ec1212b43bc28a02222028820f05a89b20
+
+CONFIRMED FIELD CANDIDATES
+------------------------------------------------------------------------------
+title:
+  [HIGH] "Ваджра" <- open_graph
+  [MEDIUM] "Ваджра" <- html.title
+category:
+  NOT FOUND
+breadcrumb:
+  NOT FOUND
+availability:
+  NOT FOUND
+price:
+  NOT FOUND
+currency:
+  NOT FOUND
+material:
+  NOT FOUND
+height:
+  NOT FOUND
+width:
+  NOT FOUND
+depth:
+  NOT FOUND
+diameter:
+  NOT FOUND
+weight:
+  NOT FOUND
+sku:
+  NOT FOUND
+image:
+  [HIGH] "https://static.tildacdn.com/stor6439-3036-4833-b163-326230633138/43830007.jpg" <- open_graph
+
+STRUCTURAL INVENTORY
+------------------------------------------------------------------------------
+JSON-LD documents:       0
+JSON-LD errors:          0
+Breadcrumb candidates:   0
+Images:                  1
+Data attribute names:    9
+Scripts:                 16
+Scripts with Tilda data: 1
+
+TILDA TOKENS
+------------------------------------------------------------------------------
+storepartuid: 1
+recid: 3
+productuid: 1
+t-store: 24
+tilda: 80
+
+DIAGNOSTICS
+------------------------------------------------------------------------------
+- На странице не найден валидный JSON-LD.
+- Breadcrumb не обнаружен ни в JSON-LD, ни в DOM.
+- Статус наличия не подтверждён ни одним исследованным источником.
