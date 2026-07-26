@@ -87,7 +87,21 @@ def build_page_document(page: dict, chunks: list[dict]) -> dict:
     title = page.get("title") or page.get("url") or "Без названия"
     url = page.get("url", "")
     content = page.get("text", "").strip()
-    content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    hash_payload = json.dumps(
+        {
+            "title": title,
+            "url": url,
+            "type": page_type,
+            "enabled": bool(page.get("enabled", True)),
+            "priority": int(page.get("priority", 0)),
+            "content": content,
+            "chunks": page_chunks(url, chunks),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    content_hash = hashlib.sha256(hash_payload.encode("utf-8")).hexdigest()
 
     return {
         "id": page_id_from_url(url, title),
@@ -174,3 +188,59 @@ if __name__ == "__main__":
 
     for key, value in result["database"].items():
         print(f"  {key}: {value}")
+
+
+def synchronize_knowledge_documents(source: dict | None = None) -> dict:
+    """Incrementally align generated JSON files and SQLite documents with a mirror."""
+    from backend.storage.database import get_connection
+
+    prepare_directories()
+    initialize_database()
+    source = source or load_knowledge()
+    pages = list(source.get("pages", []))
+    chunks = list(source.get("chunks", []))
+
+    documents = [build_page_document(page, chunks) for page in pages]
+    incoming_ids = {document["id"] for document in documents}
+    with get_connection() as connection:
+        rows = connection.execute("SELECT id, content_hash FROM documents").fetchall()
+    existing_hashes = {row["id"]: row["content_hash"] for row in rows}
+
+    created = 0
+    updated = 0
+    unchanged = 0
+    for document in documents:
+        previous_hash = existing_hashes.get(document["id"])
+        if previous_hash == document["content_hash"]:
+            unchanged += 1
+            continue
+        save_page_document(document)
+        save_document(document)
+        if previous_hash is None:
+            created += 1
+        else:
+            updated += 1
+
+    removed_ids = set(existing_hashes) - incoming_ids
+    if removed_ids:
+        with get_connection() as connection:
+            connection.executemany(
+                "DELETE FROM documents WHERE id = ?",
+                [(document_id,) for document_id in sorted(removed_ids)],
+            )
+        for directory in TYPE_DIRECTORIES.values():
+            for file_path in directory.glob("*.json"):
+                try:
+                    payload = json.loads(file_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    continue
+                if payload.get("id") in removed_ids:
+                    file_path.unlink(missing_ok=True)
+
+    return {
+        "created": created,
+        "updated": updated,
+        "unchanged": unchanged,
+        "removed": len(removed_ids),
+        "database": get_database_stats(),
+    }

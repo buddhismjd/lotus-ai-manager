@@ -148,6 +148,28 @@ ON product_snapshot_items(title);
 CREATE INDEX IF NOT EXISTS idx_product_snapshot_sku
 ON product_snapshot_items(sku);
 
+
+CREATE TABLE IF NOT EXISTS tilda_page_snapshots (
+    page_id TEXT PRIMARY KEY,
+    page_url TEXT NOT NULL UNIQUE,
+    meta_hash TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    synced_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tilda_sync_runs (
+    run_id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    finished_at TEXT,
+    summary_json TEXT NOT NULL DEFAULT '{}',
+    error_text TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_tilda_sync_runs_started
+ON tilda_sync_runs(started_at);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -472,3 +494,92 @@ if __name__ == "__main__":
 
     for table_name in get_table_names():
         print(f"  - {table_name}")
+
+
+def get_tilda_page_snapshots() -> dict[str, dict[str, str]]:
+    with get_connection() as connection:
+        rows = connection.execute(
+            "SELECT page_id, page_url, meta_hash, content_hash FROM tilda_page_snapshots"
+        ).fetchall()
+    return {
+        row["page_id"]: {
+            "page_url": row["page_url"],
+            "meta_hash": row["meta_hash"],
+            "content_hash": row["content_hash"],
+        }
+        for row in rows
+    }
+
+
+def replace_tilda_page_snapshots(snapshots: dict[str, dict[str, str]]) -> None:
+    now = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as connection:
+        connection.execute("DELETE FROM tilda_page_snapshots")
+        for page_id, snapshot in snapshots.items():
+            connection.execute(
+                """
+                INSERT INTO tilda_page_snapshots (
+                    page_id, page_url, meta_hash, content_hash, synced_at
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    page_id,
+                    snapshot["page_url"],
+                    snapshot["meta_hash"],
+                    snapshot.get("content_hash", ""),
+                    now,
+                ),
+            )
+
+
+def start_tilda_sync_run(run_id: str, project_id: str) -> None:
+    now = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO tilda_sync_runs (run_id, project_id, status, started_at)
+            VALUES (?, ?, 'running', ?)
+            """,
+            (run_id, project_id, now),
+        )
+
+
+def finish_tilda_sync_run(run_id: str, status: str, summary: dict) -> None:
+    import json
+
+    now = datetime.now().isoformat(timespec="seconds")
+    error_text = None
+    errors = summary.get("errors") or []
+    if errors:
+        error_text = json.dumps(errors, ensure_ascii=False)
+    with get_connection() as connection:
+        connection.execute(
+            """
+            UPDATE tilda_sync_runs
+            SET status = ?, finished_at = ?, summary_json = ?, error_text = ?
+            WHERE run_id = ?
+            """,
+            (status, now, json.dumps(summary, ensure_ascii=False), error_text, run_id),
+        )
+
+
+def get_latest_tilda_sync_run() -> dict | None:
+    import json
+
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT run_id, project_id, status, started_at, finished_at, summary_json
+            FROM tilda_sync_runs
+            ORDER BY started_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+    if row is None:
+        return None
+    result = dict(row)
+    try:
+        result["summary"] = json.loads(result.pop("summary_json") or "{}")
+    except json.JSONDecodeError:
+        result["summary"] = {}
+    return result

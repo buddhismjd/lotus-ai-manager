@@ -1,0 +1,11 @@
+CB-1.4.0 — Tilda Knowledge Synchronization
+
+1. Copy all package files to D:\Lotus-AI-Manager-v0.5 and allow replacement.
+2. Activate environment:
+   .venv\Scripts\activate.bat
+3. Run checks:
+   python -m pytest -q
+   python tools\cb_1_4_0_diagnostics.py
+   python tools\cb_1_4_0_smoke.py
+   python tools\cb_1_4_0_report.py
+4. Do not run the live Tilda synchronization and do not commit until test logs are reviewed.
