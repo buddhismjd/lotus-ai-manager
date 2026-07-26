@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import secrets
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from backend.storage.database import get_connection, initialize_database
+
+
+class SessionAccessDeniedError(PermissionError):
+    """Raised when a protected widget session is accessed without ownership proof."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,8 +31,113 @@ class ConversationSession:
     messages: tuple[ConversationMessage, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class SessionAccess:
+    session_id: str
+    token: str
+    created: bool
+
+
 class SessionRepository:
     """SQLite owner for persistent widget sessions and conversation history."""
+
+    TOKEN_BYTES = 32
+
+    @staticmethod
+    def _token_hash(token: str) -> str:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def _new_token(cls) -> str:
+        return secrets.token_urlsafe(cls.TOKEN_BYTES)
+
+    def establish_access(self, session_id: str, token: str | None = None) -> SessionAccess:
+        """Create or validate ownership for an API-backed active session.
+
+        Old rows created before CB-1.5.1B have no token hash. The first API chat
+        claims such a row by assigning a newly generated token. New rows are
+        protected from creation.
+        """
+        initialize_database()
+        now = datetime.now().isoformat(timespec="seconds")
+        with get_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT id, ownership_token_hash
+                FROM dialogs
+                WHERE session_id = ? AND status = 'active'
+                ORDER BY id DESC LIMIT 1
+                """,
+                (session_id,),
+            ).fetchone()
+
+            if row is None:
+                issued = self._new_token()
+                connection.execute(
+                    """
+                    INSERT INTO dialogs (
+                        session_id, status, started_at, updated_at,
+                        state_json, handoff_status, ownership_token_hash
+                    ) VALUES (?, 'active', ?, ?, '{}', 'none', ?)
+                    """,
+                    (session_id, now, now, self._token_hash(issued)),
+                )
+                return SessionAccess(session_id, issued, True)
+
+            stored_hash = row["ownership_token_hash"] or ""
+            if stored_hash:
+                if not token or not hmac.compare_digest(stored_hash, self._token_hash(token)):
+                    raise SessionAccessDeniedError("Session ownership could not be verified.")
+                return SessionAccess(session_id, token, False)
+
+            issued = self._new_token()
+            connection.execute(
+                """
+                UPDATE dialogs
+                SET ownership_token_hash = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (self._token_hash(issued), now, row["id"]),
+            )
+            return SessionAccess(session_id, issued, False)
+
+    def verify_access(self, session_id: str, token: str | None) -> None:
+        """Verify access to history/reset while retaining read compatibility for legacy rows."""
+        initialize_database()
+        with get_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT ownership_token_hash
+                FROM dialogs
+                WHERE session_id = ?
+                ORDER BY id DESC LIMIT 1
+                """,
+                (session_id,),
+            ).fetchone()
+        if row is None:
+            return
+        stored_hash = row["ownership_token_hash"] or ""
+        if not stored_hash:
+            return
+        if not token or not hmac.compare_digest(stored_hash, self._token_hash(token)):
+            raise SessionAccessDeniedError("Session ownership could not be verified.")
+
+    def rotate_token(self, session_id: str, token: str) -> str:
+        self.verify_access(session_id, token)
+        replacement = self._new_token()
+        now = datetime.now().isoformat(timespec="seconds")
+        with get_connection() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE dialogs
+                SET ownership_token_hash = ?, updated_at = ?
+                WHERE session_id = ? AND status = 'active'
+                """,
+                (self._token_hash(replacement), now, session_id),
+            )
+            if cursor.rowcount == 0:
+                raise SessionAccessDeniedError("Active session was not found.")
+        return replacement
 
     def get_state(self, session_id: str) -> dict[str, Any] | None:
         initialize_database()
@@ -155,4 +267,10 @@ class SessionRepository:
             return int(cursor.lastrowid)
 
 
-__all__ = ["ConversationMessage", "ConversationSession", "SessionRepository"]
+__all__ = [
+    "ConversationMessage",
+    "ConversationSession",
+    "SessionAccess",
+    "SessionAccessDeniedError",
+    "SessionRepository",
+]

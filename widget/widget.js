@@ -6,6 +6,7 @@
     sessionUrl: window.AI_BODHI_SESSION_URL || "/api/sales/session",
     resetUrl: window.AI_BODHI_RESET_URL || "/api/sales/reset",
     storageKey: "ai-bodhi-session-id",
+    tokenStorageKey: "ai-bodhi-session-token",
   };
 
   const root = document.getElementById("ai-bodhi-widget");
@@ -31,6 +32,17 @@
     sessionId = window.localStorage.getItem(config.storageKey) || createSessionId();
     window.localStorage.setItem(config.storageKey, sessionId);
   } catch (_) { sessionId = createSessionId(); }
+
+  let sessionToken = null;
+  try { sessionToken = window.localStorage.getItem(config.tokenStorageKey); } catch (_) { sessionToken = null; }
+
+  const saveSessionToken = (token) => {
+    sessionToken = token || null;
+    try {
+      if (sessionToken) window.localStorage.setItem(config.tokenStorageKey, sessionToken);
+      else window.localStorage.removeItem(config.tokenStorageKey);
+    } catch (_) { /* private browsing can reject storage */ }
+  };
 
   let loading = false;
   let unread = 0;
@@ -168,10 +180,11 @@
       const response = await fetch(config.apiUrl, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message: cleanText, session_id: sessionId}),
+        body: JSON.stringify({message: cleanText, session_id: sessionId, session_token: sessionToken}),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
+      if (payload.session_token) saveSessionToken(payload.session_token);
       appendMessage(payload.answer || "Сейчас не удалось подготовить ответ.", "assistant");
       appendCollection(payload.items || []);
       appendSuggestions(payload.suggestions || []);
@@ -186,7 +199,9 @@
 
   const restoreConversation = async () => {
     try {
-      const response = await fetch(`${config.sessionUrl}/${encodeURIComponent(sessionId)}`);
+      const response = await fetch(`${config.sessionUrl}/${encodeURIComponent(sessionId)}`, {
+        headers: sessionToken ? {"X-Session-Token": sessionToken} : {},
+      });
       if (!response.ok) return;
       const payload = await response.json();
       if (!Array.isArray(payload.messages) || payload.messages.length === 0) return;
@@ -202,12 +217,13 @@
     if (loading || !window.confirm("Начать новый диалог? Текущая переписка будет закрыта.")) return;
     setLoading(true);
     try {
-      await fetch(config.resetUrl, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({session_id: sessionId})});
+      await fetch(config.resetUrl, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({session_id: sessionId, session_token: sessionToken})});
     } catch (error) { console.warn("AI Bodhi reset request failed:", error); }
     try {
       sessionId = createSessionId();
       window.localStorage.setItem(config.storageKey, sessionId);
-    } catch (_) { sessionId = createSessionId(); }
+      saveSessionToken(null);
+    } catch (_) { sessionId = createSessionId(); saveSessionToken(null); }
     messages.innerHTML = '<div class="ai-bodhi__message ai-bodhi__message--assistant ai-bodhi__welcome"><span class="ai-bodhi__welcome-title">Новый диалог начат</span>Чем я могу помочь?</div>';
     setLoading(false);
     input.focus();

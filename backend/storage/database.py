@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS dialogs (
     session_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
     started_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    ownership_token_hash TEXT
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -254,6 +255,7 @@ def initialize_database() -> Path:
         dialog_columns = {
             "state_json": "TEXT NOT NULL DEFAULT '{}'",
             "handoff_status": "TEXT NOT NULL DEFAULT 'none'",
+            "ownership_token_hash": "TEXT",
         }
         for column_name, definition in dialog_columns.items():
             _ensure_column(connection, "dialogs", column_name, definition)

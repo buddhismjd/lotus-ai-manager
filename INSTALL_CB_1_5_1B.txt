@@ -1,0 +1,10 @@
+CB-1.5.1B — Session Security
+
+1. Copy all files from this archive into the project root.
+2. Allow folder merging and file replacement.
+3. Run:
+   python -m pytest -q
+   python tools\cb_1_5_1b_diagnostics.py
+   python tools\cb_1_5_1b_smoke.py
+   python tools\cb_1_5_1b_report.py
+4. Do not commit until all checks pass.
