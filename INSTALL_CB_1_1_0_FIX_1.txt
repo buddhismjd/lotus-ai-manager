@@ -1,0 +1,16 @@
+CB-1.1.0 Fix 1
+
+1. Распакуйте архив в корень проекта D:\Lotus-AI-Manager-v0.5 с заменой файлов.
+
+2. В командной строке из корня проекта выполните:
+
+git rm -r --cached --ignore-unmatch backend\knowledge\__pycache__
+if exist backend\knowledge\__pycache__ rmdir /s /q backend\knowledge\__pycache__
+
+.venv\Scripts\activate.bat
+python -m pytest -q
+python tools\cb_1_1_0_diagnostics.py
+python tools\cb_1_1_0_smoke.py
+python tools\cb_1_1_0_report.py
+
+3. Не выполняйте git add, commit и push до проверки полного лога.

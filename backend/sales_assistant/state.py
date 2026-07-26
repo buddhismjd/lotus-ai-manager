@@ -13,6 +13,11 @@ class DialogueStage(StrEnum):
     LEAD_CONTACT_METHOD = "lead_contact_method"
     LEAD_CONTACT_VALUE = "lead_contact_value"
     LEAD_COMPLETE = "lead_complete"
+    HANDOFF_NAME = "handoff_name"
+    HANDOFF_CONTACT_METHOD = "handoff_contact_method"
+    HANDOFF_CONTACT_VALUE = "handoff_contact_value"
+    HANDOFF_EMAIL = "handoff_email"
+    HANDOFF_COMPLETE = "handoff_complete"
     EMAIL_VALUE = "email_value"
     ARTISAN_SOCIAL_METHOD = "artisan_social_method"
     ARTISAN_SOCIAL_VALUE = "artisan_social_value"
@@ -35,6 +40,9 @@ class LeadDraft:
     requested_height_max_cm: float | None = None
     social_channel: str | None = None
     social_contact: str | None = None
+    email: str | None = None
+    handoff_reason: str | None = None
+    handoff_priority: str | None = None
 
     def clear(self) -> None:
         self.interest = None
@@ -51,6 +59,9 @@ class LeadDraft:
         self.requested_height_max_cm = None
         self.social_channel = None
         self.social_contact = None
+        self.email = None
+        self.handoff_reason = None
+        self.handoff_priority = None
 
 
 @dataclass(slots=True)
@@ -99,6 +110,22 @@ class DialogueState:
         self.stage = DialogueStage.LEAD_NAME
         self.lead.clear()
         self.lead.interest = self.active_title or self.topic
+
+
+    def start_handoff_capture(
+        self,
+        *,
+        reason: str,
+        priority: str,
+        user_message: str,
+    ) -> None:
+        self.goal = "manager_handoff"
+        self.stage = DialogueStage.HANDOFF_NAME
+        self.lead.clear()
+        self.lead.interest = self.active_title or self.topic
+        self.lead.conversation_summary = user_message
+        self.lead.handoff_reason = reason
+        self.lead.handoff_priority = priority
 
     def start_email_followup(self) -> None:
         self.goal = "email_followup"
@@ -221,6 +248,9 @@ class DialogueStateStore:
                     requested_height_max_cm=state.lead.requested_height_max_cm,
                     social_channel=state.lead.social_channel,
                     social_contact=state.lead.social_contact,
+                    email=state.lead.email,
+                    handoff_reason=state.lead.handoff_reason,
+                    handoff_priority=state.lead.handoff_priority,
                 ),
             )
 

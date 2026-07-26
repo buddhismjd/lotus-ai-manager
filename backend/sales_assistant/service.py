@@ -13,6 +13,10 @@ from backend.sales_assistant.dialogue import (
 )
 from backend.sales_assistant.formatter import format_sales_response, format_tour_list
 from backend.sales_assistant.leads import LeadRepository
+from backend.sales_assistant.handoff import HandoffPriority, HandoffReason
+from backend.sales_assistant.handoff_engine import HandoffEngine
+from backend.sales_assistant.lead_summary import LeadSummaryBuilder, LeadSummaryContext
+from backend.sales_assistant.lead_validator import LeadValidator
 from backend.sales_assistant.selection_page import build_selection_url
 from backend.sales_assistant.product_selection import (
     ProductSelectionRequest,
@@ -49,6 +53,8 @@ class SalesReply:
     suggestions: tuple[DialogueSuggestion, ...] = ()
     dialogue_stage: str = DialogueStage.DISCOVERY.value
     lead_id: int | None = None
+    handoff_reason: str | None = None
+    handoff_priority: str | None = None
     items: tuple[dict, ...] = ()
 
 
@@ -61,6 +67,9 @@ class SalesAssistant:
         self._tours = StructuredTourRepository()
         self._leads = LeadRepository()
         self._product_selection = ProductSelectionService()
+        self._handoff = HandoffEngine()
+        self._lead_validator = LeadValidator()
+        self._lead_summary = LeadSummaryBuilder()
 
     def reset(self, session_id: str) -> None:
         self._states.reset(session_id)
@@ -71,6 +80,14 @@ class SalesAssistant:
             return SalesReply(TONE.empty_request, "empty", "unknown")
 
         state = self._states.get(session_id)
+
+        if state.stage in {
+            DialogueStage.HANDOFF_NAME,
+            DialogueStage.HANDOFF_CONTACT_METHOD,
+            DialogueStage.HANDOFF_CONTACT_VALUE,
+            DialogueStage.HANDOFF_EMAIL,
+        }:
+            return self._handle_handoff_capture(query, state, session_id)
 
         if state.stage in {
             DialogueStage.ARTISAN_SOCIAL_METHOD,
@@ -84,6 +101,27 @@ class SalesAssistant:
 
         if state.stage != DialogueStage.DISCOVERY:
             return self._handle_lead_capture(query, state)
+
+        handoff = self._handoff.evaluate(query, topic=self._state_topic(state))
+        if handoff.required and handoff.reason is not None:
+            state.start_handoff_capture(
+                reason=handoff.reason.value,
+                priority=handoff.priority.value,
+                user_message=query,
+            )
+            return SalesReply(
+                answer=(
+                    "Я передам Ваш запрос менеджеру вместе с контекстом беседы. "
+                    "Как я могу к Вам обращаться?"
+                ),
+                kind="handoff_capture",
+                topic=self._state_topic(state),
+                needs_manager=True,
+                next_action=NextActionType.ASK_NAME,
+                dialogue_stage=state.stage.value,
+                handoff_reason=handoff.reason.value,
+                handoff_priority=handoff.priority.value,
+            )
 
         if self._starts_artisan_selection(query):
             state.start_artisan_selection()
@@ -429,6 +467,165 @@ class SalesAssistant:
             needs_manager=needs_manager,
         )
         return self._with_dialogue(reply, decision.strategy)
+
+    def _handle_handoff_capture(
+        self,
+        query: str,
+        state: DialogueState,
+        session_id: str,
+    ) -> SalesReply:
+        topic = self._state_topic(state)
+        if self._cancels_lead_capture(query):
+            state.stage = DialogueStage.DISCOVERY
+            state.goal = None
+            state.lead.clear()
+            return SalesReply(
+                "Хорошо, передачу менеджеру отменяю. Буду рада продолжить беседу.",
+                "handoff_cancelled",
+                topic,
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.HANDOFF_NAME:
+            name = query.strip()
+            if len(name) < 2 or len(name) > 80:
+                return SalesReply(
+                    "Подскажите, пожалуйста, как я могу к Вам обращаться.",
+                    "handoff_capture",
+                    topic,
+                    needs_manager=True,
+                    next_action=NextActionType.ASK_NAME,
+                    dialogue_stage=state.stage.value,
+                )
+            state.lead.name = name
+            state.stage = DialogueStage.HANDOFF_CONTACT_METHOD
+            return SalesReply(
+                "Выберите, пожалуйста, удобный канал связи: Telegram или MAX.",
+                "handoff_capture",
+                topic,
+                needs_manager=True,
+                next_action=NextActionType.ASK_CONTACT_METHOD,
+                suggestions=(
+                    DialogueSuggestion(NextActionType.ASK_CONTACT_METHOD, "Telegram", "Telegram"),
+                    DialogueSuggestion(NextActionType.ASK_CONTACT_METHOD, "MAX", "MAX"),
+                ),
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.HANDOFF_CONTACT_METHOD:
+            lowered = self._normalise(query)
+            if "telegram" in lowered or "телеграм" in lowered or lowered == "tg":
+                method = "telegram"
+            elif lowered in {"max", "макс"} or " max " in f" {lowered} ":
+                method = "max"
+            else:
+                return SalesReply(
+                    "Для передачи менеджеру выберите Telegram или MAX.",
+                    "handoff_capture",
+                    topic,
+                    needs_manager=True,
+                    next_action=NextActionType.ASK_CONTACT_METHOD,
+                    dialogue_stage=state.stage.value,
+                )
+            state.lead.contact_method = method
+            state.stage = DialogueStage.HANDOFF_CONTACT_VALUE
+            label = "Telegram username, например @username" if method == "telegram" else "контакт в MAX"
+            return SalesReply(
+                f"Напишите, пожалуйста, Ваш {label}.",
+                "handoff_capture",
+                topic,
+                needs_manager=True,
+                next_action=NextActionType.ASK_CONTACT_VALUE,
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.HANDOFF_CONTACT_VALUE:
+            value = query.strip()
+            method = state.lead.contact_method or "telegram"
+            provisional = self._lead_validator.validate(
+                name=state.lead.name,
+                contact_channel=method,
+                contact_value=value,
+                email="temporary@example.com",
+            )
+            contact_errors = tuple(error for error in provisional.errors if error.field == "contact_value")
+            if contact_errors:
+                return SalesReply(
+                    contact_errors[0].message,
+                    "handoff_capture",
+                    topic,
+                    needs_manager=True,
+                    next_action=NextActionType.ASK_CONTACT_VALUE,
+                    dialogue_stage=state.stage.value,
+                )
+            state.lead.contact_value = value
+            state.stage = DialogueStage.HANDOFF_EMAIL
+            return SalesReply(
+                "Благодарю Вас. Укажите, пожалуйста, email для подтверждения обращения.",
+                "handoff_capture",
+                topic,
+                needs_manager=True,
+                next_action=NextActionType.ASK_CONTACT_VALUE,
+                dialogue_stage=state.stage.value,
+            )
+
+        if state.stage == DialogueStage.HANDOFF_EMAIL:
+            validation = self._lead_validator.validate(
+                name=state.lead.name,
+                contact_channel=state.lead.contact_method,
+                contact_value=state.lead.contact_value,
+                email=query,
+            )
+            if not validation.is_valid or validation.data is None:
+                email_errors = tuple(error for error in validation.errors if error.field == "email")
+                message = email_errors[0].message if email_errors else "Проверьте введённые контактные данные."
+                return SalesReply(
+                    message,
+                    "handoff_capture",
+                    topic,
+                    needs_manager=True,
+                    next_action=NextActionType.ASK_CONTACT_VALUE,
+                    dialogue_stage=state.stage.value,
+                )
+            reason = HandoffReason(state.lead.handoff_reason or HandoffReason.MANAGER_REQUIRED.value)
+            priority = HandoffPriority(state.lead.handoff_priority or HandoffPriority.NORMAL.value)
+            summary = self._lead_summary.build(LeadSummaryContext(
+                interest_title=state.lead.interest,
+                last_question=state.lead.conversation_summary,
+                handoff_reason=reason,
+                topic=topic,
+            ))
+            saved = self._leads.save_handoff(
+                contact=validation.data,
+                reason=reason,
+                priority=priority,
+                manager_summary=summary,
+                interest=state.lead.interest,
+                comment=f"Источник: AI Bodhi; тема: {topic}",
+                session_id=session_id,
+            )
+            state.stage = DialogueStage.HANDOFF_COMPLETE
+            state.goal = None
+            state.lead.clear()
+            return SalesReply(
+                "Благодарю Вас. Обращение сохранено и передано менеджеру вместе с контекстом беседы.",
+                "handoff_saved",
+                topic,
+                needs_manager=True,
+                next_action=NextActionType.LEAD_SAVED,
+                dialogue_stage=DialogueStage.HANDOFF_COMPLETE.value,
+                lead_id=saved.id,
+                handoff_reason=reason.value,
+                handoff_priority=priority.value,
+            )
+
+        state.stage = DialogueStage.DISCOVERY
+        return SalesReply(
+            "Буду рада продолжить. Что ещё Вас интересует?",
+            "handoff_reset",
+            topic,
+            dialogue_stage=state.stage.value,
+        )
 
     def _handle_lead_capture(self, query: str, state: DialogueState) -> SalesReply:
         if self._cancels_lead_capture(query):

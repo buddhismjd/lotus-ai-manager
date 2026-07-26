@@ -1,0 +1,13 @@
+CB-1.1.0 — установка
+
+1. Распакуйте архив в корень проекта D:\Lotus-AI-Manager-v0.5.
+2. Разрешите объединение папок и замену файлов.
+3. Запустите проверки:
+
+.venv\Scripts\activate.bat
+python -m pytest -q
+python tools\cb_1_1_0_diagnostics.py
+python tools\cb_1_1_0_smoke.py
+python tools\cb_1_1_0_report.py
+
+До проверки не выполняйте git add, commit и push.
