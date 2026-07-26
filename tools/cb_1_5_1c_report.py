@@ -1,0 +1,7 @@
+print("CB-1.5.1C — Production Runtime Hardening")
+print("cors=trusted origins from environment")
+print("sqlite=WAL and configurable busy_timeout")
+print("rate_limit=per-IP public sales boundary")
+print("admin=token protected routes and POST rebuild")
+print("security_log=JSON Lines events")
+print("configuration=.env production controls")

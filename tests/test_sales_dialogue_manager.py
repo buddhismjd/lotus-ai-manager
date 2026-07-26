@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 import backend.main as main_module
@@ -89,9 +91,10 @@ def test_psychologist_dialogue_offers_booking() -> None:
 
 def test_api_serializes_next_action_and_suggestions() -> None:
     client = TestClient(main_module.app)
+    session_id = f"sdm-api-{uuid4().hex}"
     response = client.post(
         "/api/sales/chat",
-        json={"message": "Сколько стоит тур на Кайлас?", "session_id": "sdm-api"},
+        json={"message": "Сколько стоит тур на Кайлас?", "session_id": session_id},
     )
     payload = response.json()
 

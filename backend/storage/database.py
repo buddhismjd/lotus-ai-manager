@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
-from backend.config import DATA_DIR, DATABASE_FILE
+from backend.config import DATA_DIR, DATABASE_FILE, SQLITE_BUSY_TIMEOUT_MS
 
 
 SCHEMA = """
@@ -210,6 +210,8 @@ def get_connection() -> Iterator[sqlite3.Connection]:
     connection = sqlite3.connect(DATABASE_FILE)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA journal_mode = WAL")
+    connection.execute(f"PRAGMA busy_timeout = {max(0, SQLITE_BUSY_TIMEOUT_MS)}")
 
     try:
         yield connection

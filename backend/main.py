@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from html import escape
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from backend.api_errors import validation_error_response
-from backend.config import AI_PROVIDER, EMAIL_TO, OLLAMA_MODEL, SITE_URL
+from backend.config import (AI_PROVIDER, CORS_ALLOWED_ORIGINS, CORS_ALLOW_LOCALHOST, EMAIL_TO, OLLAMA_MODEL, SITE_URL)
 from backend.services.ai_service import chat
 from backend.rag.dynamic_query_router import route_query
 from backend.catalog.collection_builder import build_product_collection
@@ -18,14 +18,21 @@ from backend.services.knowledge_service import load_knowledge, rebuild_knowledge
 from backend.services.llm_service import ollama_available
 from backend.sales_assistant.api import router as sales_router
 from backend.widget_integration import router as widget_router
+from backend.admin_security import require_admin_access
+from backend.runtime_security import PublicApiRateLimitMiddleware, write_security_event
 
 app = FastAPI(title="Lotus AI Manager", version="0.7.0")
 app.add_exception_handler(RequestValidationError, validation_error_response)
 app.include_router(sales_router)
 app.include_router(widget_router)
+app.add_middleware(PublicApiRateLimitMiddleware)
+
+_cors_origins = list(CORS_ALLOWED_ORIGINS)
+if CORS_ALLOW_LOCALHOST:
+    _cors_origins.extend(["http://127.0.0.1:8000", "http://localhost:8000"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # только для локальной разработки
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,20 +64,20 @@ def home() -> dict:
     }
 
 
-@app.get("/admin", response_class=HTMLResponse)
+@app.get("/admin", response_class=HTMLResponse, dependencies=[Depends(require_admin_access)])
 def admin_page() -> str:
     knowledge = load_knowledge()
     ollama_status = "доступна" if ollama_available() else "не подключена"
     body = f"""
     <div class='top'><div><h1>Lotus AI Manager v0.6</h1><div class='muted'>Административная панель</div></div><div><a class='button secondary' href='/dev'>Состояние системы</a> <a class='button' href='/chat-ui'>Открыть чат</a></div></div>
-    <div class='card'><h2>База знаний сайта</h2><p><b>Сайт:</b> {escape(SITE_URL)}</p><p><b>Страниц:</b> {knowledge.get('pages_count',0)}</p><p><b>Фрагментов:</b> {knowledge.get('chunks_count',0)}</p><p><b>Обновлено:</b> {escape(str(knowledge.get('updated_at') or 'ещё не обновлялась'))}</p><a class='button' href='/admin/rebuild'>Обновить сайт</a></div>
+    <div class='card'><h2>База знаний сайта</h2><p><b>Сайт:</b> {escape(SITE_URL)}</p><p><b>Страниц:</b> {knowledge.get('pages_count',0)}</p><p><b>Фрагментов:</b> {knowledge.get('chunks_count',0)}</p><p><b>Обновлено:</b> {escape(str(knowledge.get('updated_at') or 'ещё не обновлялась'))}</p><form action='/admin/rebuild' method='post'><button class='button' type='submit'>Обновить сайт</button></form></div>
     <div class='card'><h2>AI</h2><p><b>Режим:</b> {escape(AI_PROVIDER)}</p><p><b>Ollama:</b> {ollama_status}</p><p><b>Модель:</b> {escape(OLLAMA_MODEL)}</p></div>
     <div class='card'><h2>Проверить поиск</h2><form action='/admin/search' method='get'><input name='q' required placeholder='Например: Кайлас, Лапчи, консультация'> <button class='button'>Искать</button></form></div>
     """
     return render("Lotus AI Manager — админка", body)
 
 
-@app.get("/dev", response_class=HTMLResponse)
+@app.get("/dev", response_class=HTMLResponse, dependencies=[Depends(require_admin_access)])
 def developer_dashboard() -> str:
     data = get_dashboard_data()
     stats = data["stats"]
@@ -94,14 +101,15 @@ def developer_dashboard() -> str:
     return render("Lotus AI Manager — состояние", body)
 
 
-@app.get("/admin/rebuild", response_class=HTMLResponse)
-def admin_rebuild() -> str:
+@app.post("/admin/rebuild", response_class=HTMLResponse, dependencies=[Depends(require_admin_access)])
+def admin_rebuild(request: Request) -> str:
+    write_security_event("admin_rebuild_started", request)
     knowledge = rebuild_knowledge()
     body = f"<div class='card'><h1>Сайт обновлён</h1><p><b>Страниц:</b> {knowledge.get('pages_count',0)}</p><p><b>Фрагментов:</b> {knowledge.get('chunks_count',0)}</p><p><b>Ошибок:</b> {knowledge.get('errors_count',0)}</p><p>После этого выполните <code>python -m backend.rag.knowledge_builder</code></p><a class='button' href='/admin'>Вернуться</a></div>"
     return render("База знаний обновлена", body)
 
 
-@app.get("/admin/search", response_class=HTMLResponse)
+@app.get("/admin/search", response_class=HTMLResponse, dependencies=[Depends(require_admin_access)])
 def admin_search(q: str = Query(...)) -> str:
     results = search_knowledge(q)
     items = ""

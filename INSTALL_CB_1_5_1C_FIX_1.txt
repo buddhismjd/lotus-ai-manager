@@ -1,0 +1,17 @@
+CB-1.5.1C Fix 1 — repeatable API tests
+
+1. Extract this archive into:
+   D:\Lotus-AI-Manager-v0.5
+2. Allow folders to merge and replace both files.
+3. Run:
+   .venv\Scripts\activate.bat
+   python -m pytest -q
+   python tools\cb_1_5_1c_diagnostics.py
+   python tools\cb_1_5_1c_smoke.py
+   python tools\cb_1_5_1c_report.py
+
+Why this fix is required:
+The two legacy API tests reused permanent session identifiers. After CB-1.5.1B,
+those identifiers can already belong to protected sessions in the persistent SQLite
+database, so a later test run correctly receives HTTP 403. The tests now create a
+unique session identifier per run. Production session security is unchanged.

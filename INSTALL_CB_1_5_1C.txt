@@ -1,0 +1,12 @@
+CB-1.5.1C — INSTALLATION
+
+1. Copy all files from this archive into D:\Lotus-AI-Manager-v0.5 and allow replacement.
+2. Do not replace your real .env. Copy the new production variables from .env.example into .env.
+3. Set ADMIN_TOKEN to a long random secret before public deployment.
+4. Run:
+   .venv\Scripts\activate.bat
+   python -m pytest -q
+   python tools\cb_1_5_1c_diagnostics.py
+   python tools\cb_1_5_1c_smoke.py
+   python tools\cb_1_5_1c_report.py
+5. Do not commit or push until all checks pass.
