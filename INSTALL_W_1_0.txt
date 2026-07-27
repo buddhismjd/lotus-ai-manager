@@ -1,0 +1,24 @@
+AI Bodhi W-1.0 — Beta Widget Integration
+
+1. Распакуйте архив поверх папки проекта:
+   D:\Lotus-AI-Manager-v0.5
+
+2. Активируйте окружение:
+   .venv\Scripts\activate.bat
+
+3. Запустите проверки:
+   python -m pytest -q
+   python tools\w_1_0_diagnostics.py
+   python tools\w_1_0_smoke.py
+   python tools\w_1_0_report.py
+
+4. Запустите API:
+   python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+5. Проверьте локально:
+   http://127.0.0.1:8000/widget/health
+   http://127.0.0.1:8000/widget/embed
+
+6. Для Tilda понадобится HTTPS-адрес API. После получения адреса откройте:
+   https://ВАШ-HTTPS-ДОМЕН/widget/embed
+   и скопируйте код в HTML-блок T123 на сайте.

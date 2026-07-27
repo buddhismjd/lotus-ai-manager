@@ -224,3 +224,6 @@
   .ai-bodhi__typing-dots i { animation: none; }
   .ai-bodhi__messages { scroll-behavior: auto; }
 }
+
+.ai-bodhi__retry { display: flex; justify-content: flex-start; margin: -4px 0 14px; }
+.ai-bodhi__connection-note { color: var(--bodhi-muted); font-size: 11px; }

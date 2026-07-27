@@ -5,6 +5,8 @@
     apiUrl: window.AI_BODHI_API_URL || "/api/sales/chat",
     sessionUrl: window.AI_BODHI_SESSION_URL || "/api/sales/session",
     resetUrl: window.AI_BODHI_RESET_URL || "/api/sales/reset",
+    healthUrl: window.AI_BODHI_HEALTH_URL || "/widget/health",
+    requestTimeoutMs: Number(window.AI_BODHI_REQUEST_TIMEOUT_MS || 20000),
     storageKey: "ai-bodhi-session-id",
     tokenStorageKey: "ai-bodhi-session-token",
   };
@@ -46,6 +48,7 @@
 
   let loading = false;
   let unread = 0;
+  let lastFailedMessage = "";
 
   const setBadge = (count) => {
     unread = Math.max(0, count);
@@ -105,6 +108,33 @@
     if (box.childElementCount) messages.appendChild(box);
   };
 
+  const appendRetry = (messageText) => {
+    const box = document.createElement("div");
+    box.className = "ai-bodhi__retry";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ai-bodhi__suggestion";
+    button.textContent = "Повторить отправку";
+    button.addEventListener("click", () => {
+      box.remove();
+      sendMessage(messageText);
+    });
+    box.appendChild(button);
+    messages.appendChild(box);
+  };
+
+  const fetchJson = async (url, options = {}) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), config.requestTimeoutMs);
+    try {
+      const response = await fetch(url, {...options, signal: controller.signal});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  };
+
   const appendCollection = (items) => {
     if (!Array.isArray(items) || items.length === 0) return;
     const groups = new Map();
@@ -132,6 +162,7 @@
           image.alt = item.title || "Карточка";
           image.loading = "lazy";
           image.referrerPolicy = "no-referrer-when-downgrade";
+          image.addEventListener("error", () => image.remove());
           card.appendChild(image);
         }
         const body = document.createElement("div");
@@ -140,12 +171,6 @@
         title.className = "ai-bodhi__card-title";
         title.textContent = item.title || "Без названия";
         body.appendChild(title);
-        if (item.description) {
-          const description = document.createElement("div");
-          description.className = "ai-bodhi__card-description";
-          description.textContent = item.description;
-          body.appendChild(description);
-        }
         [item.dates, item.duration, item.direction, item.price, item.size, item.material, item.availability].filter(Boolean).forEach((value) => {
           const meta = document.createElement("div");
           meta.className = "ai-bodhi__card-meta";
@@ -158,7 +183,8 @@
           link.href = item.url;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
-          link.textContent = item.button_label || (item.item_type === "tour" ? "Открыть путешествие" : "Открыть товар");
+          const defaultLabel = item.item_type === "tour" ? "Открыть тур" : item.item_type === "service" ? "Открыть услугу" : "Открыть товар";
+          link.textContent = item.button_label || defaultLabel;
           body.appendChild(link);
         }
         card.appendChild(body);
@@ -177,20 +203,21 @@
     appendMessage(cleanText, "user");
     setLoading(true);
     try {
-      const response = await fetch(config.apiUrl, {
+      const payload = await fetchJson(config.apiUrl, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({message: cleanText, session_id: sessionId, session_token: sessionToken}),
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
       if (payload.session_token) saveSessionToken(payload.session_token);
       appendMessage(payload.answer || "Сейчас не удалось подготовить ответ.", "assistant");
       appendCollection(payload.items || []);
       appendSuggestions(payload.suggestions || []);
     } catch (error) {
       console.error("AI Bodhi widget error:", error);
-      appendMessage("Не удалось связаться с помощником. Проверьте соединение и попробуйте ещё раз.", "error");
+      lastFailedMessage = cleanText;
+      const timeout = error?.name === "AbortError";
+      appendMessage(timeout ? "Ответ занял слишком много времени. Попробуйте отправить сообщение ещё раз." : "Не удалось связаться с помощником. Проверьте соединение и попробуйте ещё раз.", "error");
+      appendRetry(lastFailedMessage);
     } finally {
       setLoading(false);
       input.focus();
@@ -199,11 +226,9 @@
 
   const restoreConversation = async () => {
     try {
-      const response = await fetch(`${config.sessionUrl}/${encodeURIComponent(sessionId)}`, {
+      const payload = await fetchJson(`${config.sessionUrl}/${encodeURIComponent(sessionId)}`, {
         headers: sessionToken ? {"X-Session-Token": sessionToken} : {},
       });
-      if (!response.ok) return;
-      const payload = await response.json();
       if (!Array.isArray(payload.messages) || payload.messages.length === 0) return;
       messages.replaceChildren();
       payload.messages.forEach((message) => {
@@ -229,6 +254,12 @@
     input.focus();
   };
 
+  const checkBackend = async () => {
+    try { await fetchJson(config.healthUrl); }
+    catch (error) { console.warn("AI Bodhi backend health check failed:", error); }
+  };
+
+  checkBackend();
   restoreConversation();
   root.querySelectorAll("[data-message]").forEach((button) => button.addEventListener("click", () => sendMessage(button.dataset.message)));
   toggle.addEventListener("click", () => setOpen(panel.hidden));
