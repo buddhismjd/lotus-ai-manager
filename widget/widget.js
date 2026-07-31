@@ -135,6 +135,102 @@
     }
   };
 
+  const cardTypeLabel = (itemType) => ({
+    product: "Товар",
+    tour: "Путешествие",
+    service: "Услуга",
+  }[itemType] || "Предложение");
+
+  const cardMeta = (item) => {
+    if (item.item_type === "tour") {
+      return [
+        ["Даты", item.availability || item.dates],
+        ["Стоимость", item.price],
+      ];
+    }
+    if (item.item_type === "service") {
+      return [
+        ["Стоимость", item.price],
+        ["Доступность", item.availability],
+      ];
+    }
+    return [
+      ["Цена", item.price],
+      ["Наличие", item.availability],
+    ];
+  };
+
+  const normalizedCardActions = (item) => {
+    if (Array.isArray(item.actions) && item.actions.length > 0) {
+      return item.actions.filter((action) => action && action.type === "link" && action.url);
+    }
+    if (!item.url) return [];
+    const defaultLabel = item.item_type === "tour" ? "Открыть тур" : item.item_type === "service" ? "Открыть услугу" : "Открыть товар";
+    return [{type: "link", url: item.url, label: item.button_label || defaultLabel}];
+  };
+
+  const appendCard = (item, collection) => {
+    const card = document.createElement("article");
+    const itemType = ["product", "tour", "service"].includes(item.item_type) ? item.item_type : "product";
+    card.className = `ai-bodhi__card ai-bodhi__card--${itemType}`;
+    card.dataset.cardVersion = item.card_version || "1.0";
+
+    if (item.image_url) {
+      const image = document.createElement("img");
+      image.className = "ai-bodhi__card-image";
+      image.src = item.image_url;
+      image.alt = item.title || "Карточка";
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer-when-downgrade";
+      image.addEventListener("error", () => image.remove());
+      card.appendChild(image);
+    }
+
+    const body = document.createElement("div");
+    body.className = "ai-bodhi__card-body";
+
+    const badge = document.createElement("div");
+    badge.className = "ai-bodhi__card-badge";
+    badge.textContent = cardTypeLabel(itemType);
+    body.appendChild(badge);
+
+    const title = document.createElement("div");
+    title.className = "ai-bodhi__card-title";
+    title.textContent = item.title || "Без названия";
+    body.appendChild(title);
+
+    cardMeta(item).filter(([, value]) => Boolean(value)).forEach(([label, value]) => {
+      const meta = document.createElement("div");
+      meta.className = "ai-bodhi__card-meta";
+      const metaLabel = document.createElement("span");
+      metaLabel.className = "ai-bodhi__card-meta-label";
+      metaLabel.textContent = `${label}:`;
+      const metaValue = document.createElement("span");
+      metaValue.textContent = String(value);
+      meta.append(metaLabel, metaValue);
+      body.appendChild(meta);
+    });
+
+    const actions = normalizedCardActions(item);
+    if (actions.length > 0) {
+      const actionsBox = document.createElement("div");
+      actionsBox.className = "ai-bodhi__card-actions";
+      actions.forEach((action) => {
+        const link = document.createElement("a");
+        link.className = "ai-bodhi__card-link";
+        link.href = action.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = action.label || "Открыть";
+        actionsBox.appendChild(link);
+      });
+      body.appendChild(actionsBox);
+    }
+
+    card.appendChild(body);
+    collection.appendChild(card);
+  };
+
   const appendCollection = (items) => {
     if (!Array.isArray(items) || items.length === 0) return;
     const groups = new Map();
@@ -152,44 +248,7 @@
       section.appendChild(heading);
       const collection = document.createElement("div");
       collection.className = "ai-bodhi__collection";
-      groupItems.forEach((item) => {
-        const card = document.createElement("article");
-        card.className = "ai-bodhi__card";
-        if (item.image_url) {
-          const image = document.createElement("img");
-          image.className = "ai-bodhi__card-image";
-          image.src = item.image_url;
-          image.alt = item.title || "Карточка";
-          image.loading = "lazy";
-          image.referrerPolicy = "no-referrer-when-downgrade";
-          image.addEventListener("error", () => image.remove());
-          card.appendChild(image);
-        }
-        const body = document.createElement("div");
-        body.className = "ai-bodhi__card-body";
-        const title = document.createElement("div");
-        title.className = "ai-bodhi__card-title";
-        title.textContent = item.title || "Без названия";
-        body.appendChild(title);
-        [item.dates, item.duration, item.direction, item.price, item.size, item.material, item.availability].filter(Boolean).forEach((value) => {
-          const meta = document.createElement("div");
-          meta.className = "ai-bodhi__card-meta";
-          meta.textContent = value;
-          body.appendChild(meta);
-        });
-        if (item.url) {
-          const link = document.createElement("a");
-          link.className = "ai-bodhi__card-link";
-          link.href = item.url;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          const defaultLabel = item.item_type === "tour" ? "Открыть тур" : item.item_type === "service" ? "Открыть услугу" : "Открыть товар";
-          link.textContent = item.button_label || defaultLabel;
-          body.appendChild(link);
-        }
-        card.appendChild(body);
-        collection.appendChild(card);
-      });
+      groupItems.forEach((item) => appendCard(item, collection));
       section.appendChild(collection);
       messages.appendChild(section);
     });

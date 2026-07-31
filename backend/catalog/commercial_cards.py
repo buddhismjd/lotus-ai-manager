@@ -31,7 +31,16 @@ def commercial_card(item: CollectionItem) -> dict[str, Any]:
         "service": "Открыть услугу",
     }[item_type]
 
+    actions = (
+        {
+            "type": "link",
+            "label": button_label,
+            "url": item.url,
+        },
+    ) if item.url else ()
+
     return {
+        "card_version": "2.0",
         "id": item.id,
         "item_type": item_type,
         "title": item.title,
@@ -40,6 +49,7 @@ def commercial_card(item: CollectionItem) -> dict[str, Any]:
         "availability": availability,
         "url": item.url,
         "button_label": button_label,
+        "actions": actions,
         "status": item.status,
     }
 

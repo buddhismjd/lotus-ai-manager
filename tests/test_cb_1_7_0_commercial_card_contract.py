@@ -21,6 +21,7 @@ def test_product_card_contract_is_minimal_and_complete() -> None:
     card = commercial_card(item)
 
     assert card == {
+        "card_version": "2.0",
         "id": "p1",
         "item_type": "product",
         "title": "Статуя Белой Тары",
@@ -29,6 +30,11 @@ def test_product_card_contract_is_minimal_and_complete() -> None:
         "availability": "В наличии",
         "url": "https://example.test/p1",
         "button_label": "Открыть товар",
+        "actions": ({
+            "type": "link",
+            "label": "Открыть товар",
+            "url": "https://example.test/p1",
+        },),
         "status": "published",
     }
     assert "description" not in card
@@ -52,6 +58,12 @@ def test_tour_card_contract_requires_dates_and_price() -> None:
     assert card["price"] == "1 450 $"
     assert card["availability"] == "4–11 ноября 2026"
     assert card["button_label"] == "Открыть тур"
+    assert card["card_version"] == "2.0"
+    assert card["actions"] == ({
+        "type": "link",
+        "label": "Открыть тур",
+        "url": "https://example.test/t1",
+    },)
     assert "description" not in card
 
 
