@@ -33,9 +33,9 @@ def test_widget_renders_rich_cards_and_quick_actions() -> None:
     assert "appendCollection" in js
     assert "appendSuggestions" in js
     assert "data-bodhi-quick-actions" in html
-    assert "Путешествия" in html
-    assert "Магазин" in html
-    assert "Консультация" in html
+    assert "Путешествия" not in html
+    assert "Магазин" not in html
+    assert "Консультация" not in html
 
 
 def test_tilda_embed_contains_all_production_endpoint_placeholders() -> None:
