@@ -84,6 +84,8 @@ class DialogueState:
     product_selection_height_max_cm: float | None = None
     pending_clarification_query: str | None = None
     pending_clarification_type: str | None = None
+    active_collection_topic: str | None = None
+    active_collection_items: tuple[dict, ...] = ()
     lead: LeadDraft = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
@@ -95,6 +97,7 @@ class DialogueState:
         payload["stage"] = self.stage.value
         payload["candidate_tour_ids"] = list(self.candidate_tour_ids)
         payload["candidate_tour_titles"] = list(self.candidate_tour_titles)
+        payload["active_collection_items"] = list(self.active_collection_items)
         return payload
 
     @classmethod
@@ -124,6 +127,11 @@ class DialogueState:
             product_selection_height_max_cm=payload.get("product_selection_height_max_cm"),
             pending_clarification_query=payload.get("pending_clarification_query"),
             pending_clarification_type=payload.get("pending_clarification_type"),
+            active_collection_topic=payload.get("active_collection_topic"),
+            active_collection_items=tuple(
+                item for item in (payload.get("active_collection_items") or ())
+                if isinstance(item, dict)
+            ),
             lead=LeadDraft(**{
                 key: lead_payload.get(key)
                 for key in LeadDraft.__dataclass_fields__
@@ -243,6 +251,18 @@ class DialogueState:
             "Согласие передать контакт в социальной сети и email для уточнения "
             "актуального наличия у мастеров и отправки персональной подборки."
         )
+
+
+    def remember_collection(self, *, topic: str, items: tuple[dict, ...]) -> None:
+        """Keep the exact public cards shown to the visitor for follow-up turns."""
+        self.active_collection_topic = topic
+        self.active_collection_items = tuple(dict(item) for item in items)
+        self.active_title = None
+        self.active_url = None
+
+    def clear_collection(self) -> None:
+        self.active_collection_topic = None
+        self.active_collection_items = ()
 
     def clear_candidates(self) -> None:
         self.candidate_tour_ids = ()

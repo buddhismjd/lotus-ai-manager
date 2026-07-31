@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Literal
 
 from backend.rag.dynamic_query_router import route_query
@@ -128,6 +129,11 @@ class SalesAssistant:
         if state.stage == DialogueStage.EMAIL_VALUE:
             return self._handle_email_followup(query, state)
 
+        collection_follow_up = self._active_collection_follow_up(query, state)
+        if collection_follow_up is not None:
+            state.last_query = query
+            return collection_follow_up
+
         if state.stage != DialogueStage.DISCOVERY:
             return self._handle_lead_capture(query, state)
 
@@ -215,8 +221,8 @@ class SalesAssistant:
             if product_items:
                 state.last_query = query
                 state.topic = "product"
-                state.active_title = product_items[0].title if len(product_items) == 1 else None
-                state.active_url = product_items[0].url if len(product_items) == 1 else None
+                cards = commercial_cards(product_items)
+                state.remember_collection(topic="product", items=cards)
                 return SalesReply(
                     answer=(
                         f"Подобрала {len(product_items)} подходящих "
@@ -231,7 +237,7 @@ class SalesAssistant:
                     ),
                     kind="product_collection",
                     topic="product",
-                    items=commercial_cards(product_items),
+                    items=cards,
                 )
 
         selection_request = parse_product_selection_request(query)
@@ -267,12 +273,8 @@ class SalesAssistant:
             if product_items:
                 state.last_query = query
                 state.topic = "product"
-                if len(product_items) == 1:
-                    state.active_title = product_items[0].title
-                    state.active_url = product_items[0].url
-                else:
-                    state.active_title = None
-                    state.active_url = None
+                cards = commercial_cards(product_items)
+                state.remember_collection(topic="product", items=cards)
                 recommendation = analyze_recommendation_query(query)
                 verb = "Подобрала" if recommendation.is_recommendation else "Нашла"
                 answer = (
@@ -291,7 +293,7 @@ class SalesAssistant:
                         answer=answer,
                         kind="product_collection",
                         topic="product",
-                        items=commercial_cards(product_items),
+                        items=cards,
                     ),
                     decision.strategy,
                 )
@@ -319,6 +321,8 @@ class SalesAssistant:
             state.topic = "tour"
             collection_label = country or intent_decision.label or "запросу"
             if tour_items:
+                cards = commercial_cards(tour_items)
+                state.remember_collection(topic="tour", items=cards)
                 planned_only = all(item.status == "planned" for item in tour_items)
                 published_tours = [
                     tour
@@ -348,7 +352,7 @@ class SalesAssistant:
                         answer=answer,
                         kind="tour_collection",
                         topic="tour",
-                        items=commercial_cards(tour_items),
+                        items=cards,
                         needs_manager=planned_only,
                     ),
                     "tour_list",
@@ -1129,6 +1133,70 @@ class SalesAssistant:
             url=tour.url,
             needs_manager=needs_manager,
         )
+
+    @staticmethod
+    def _requested_collection_index(query: str) -> int | None:
+        normalized = query.casefold().replace("ё", "е")
+        words = {
+            "первый": 0, "первая": 0, "первое": 0,
+            "второй": 1, "вторая": 1, "второе": 1,
+            "третий": 2, "третья": 2, "третье": 2,
+            "четвертый": 3, "четвертая": 3, "четвертое": 3,
+            "пятый": 4, "пятая": 4, "пятое": 4,
+        }
+        for word, index in words.items():
+            if re.search(rf"\b{word}\b", normalized):
+                return index
+        match = re.search(r"(?:покажи|открой|выбери|вариант)\s*(?:номер\s*)?(\d+)", normalized)
+        if match:
+            return int(match.group(1)) - 1
+        return None
+
+    def _active_collection_follow_up(
+        self,
+        query: str,
+        state: DialogueState,
+    ) -> SalesReply | None:
+        items = state.active_collection_items
+        if not items:
+            return None
+        normalized = query.casefold().replace("ё", "е")
+        index = self._requested_collection_index(query)
+        if index is not None:
+            if index < 0 or index >= len(items):
+                return SalesReply(
+                    answer=f"В текущей подборке {len(items)} вариантов. Укажите номер от 1 до {len(items)}.",
+                    kind="collection_clarification",
+                    topic=self._state_topic(state),
+                    items=items,
+                )
+            item = items[index]
+            state.active_title = item.get("title")
+            state.active_url = item.get("url")
+            return SalesReply(
+                answer=f"Показываю вариант №{index + 1}: «{item.get('title') or 'Без названия'}».",
+                kind=f"{state.active_collection_topic or 'catalog'}_item",
+                topic=self._state_topic(state),
+                title=item.get("title"),
+                url=item.get("url"),
+                items=(item,),
+            )
+
+        more_patterns = (
+            "есть еще", "покажи еще", "что еще", "остальные", "все варианты",
+            "покажи все", "еще варианты",
+        )
+        if any(pattern in normalized for pattern in more_patterns):
+            return SalesReply(
+                answer=(
+                    f"В текущей подборке {len(items)} вариантов. "
+                    "Показываю все найденные позиции повторно."
+                ),
+                kind=f"{state.active_collection_topic or 'catalog'}_collection",
+                topic=self._state_topic(state),
+                items=items,
+            )
+        return None
 
     def _with_dialogue(self, reply: SalesReply, strategy: str) -> SalesReply:
         plan = self._dialogue.plan(

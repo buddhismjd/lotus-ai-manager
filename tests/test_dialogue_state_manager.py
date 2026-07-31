@@ -168,3 +168,67 @@ def test_new_country_query_resets_previous_tour_context(monkeypatch) -> None:
     state = assistant._states.get("country-switch")
     assert state.active_tour_id is None
     assert state.active_title is None
+
+
+def test_active_product_collection_supports_numbered_follow_up(monkeypatch) -> None:
+    from backend.catalog.collection_builder import CollectionItem
+    import backend.sales_assistant.service as service_module
+
+    products = [
+        CollectionItem(id="p1", title="Статуя Белой Тары", url="https://example.com/p1", image_url="https://example.com/p1.jpg"),
+        CollectionItem(id="p2", title="Статуя Зелёной Тары", url="https://example.com/p2", image_url="https://example.com/p2.jpg"),
+        CollectionItem(id="p3", title="Статуя Манджушри", url="https://example.com/p3", image_url="https://example.com/p3.jpg"),
+    ]
+    monkeypatch.setattr(service_module, "build_product_collection", lambda *args, **kwargs: products)
+    assistant = SalesAssistant()
+
+    state = assistant._states.get("active-products")
+    from backend.catalog.commercial_cards import commercial_cards
+    state.topic = "product"
+    state.remember_collection(topic="product", items=commercial_cards(products))
+    first = SalesReply(answer="Подборка", kind="product_collection", topic="product", items=state.active_collection_items)
+    second = assistant.reply("Покажи второй", "active-products")
+
+    assert len(first.items) == 3
+    assert second.kind == "product_item"
+    assert len(second.items) == 1
+    assert second.items[0]["id"] == "p2"
+    assert second.items[0]["image_url"] == "https://example.com/p2.jpg"
+    assert second.title == "Статуя Зелёной Тары"
+
+
+def test_active_collection_can_repeat_all_items(monkeypatch) -> None:
+    from backend.catalog.collection_builder import CollectionItem
+    import backend.sales_assistant.service as service_module
+
+    products = [
+        CollectionItem(id="p1", title="Ваджра", url="https://example.com/p1"),
+        CollectionItem(id="p2", title="Пхурба", url="https://example.com/p2"),
+    ]
+    monkeypatch.setattr(service_module, "build_product_collection", lambda *args, **kwargs: products)
+    assistant = SalesAssistant()
+
+    state = assistant._states.get("active-more")
+    from backend.catalog.commercial_cards import commercial_cards
+    state.topic = "product"
+    state.remember_collection(topic="product", items=commercial_cards(products))
+    reply = assistant.reply("Есть ещё?", "active-more")
+
+    assert reply.kind == "product_collection"
+    assert [item["id"] for item in reply.items] == ["p1", "p2"]
+    assert "2 вариантов" in reply.answer
+
+
+def test_active_collection_survives_state_serialization() -> None:
+    state = DialogueState()
+    state.remember_collection(
+        topic="product",
+        items=({"id": "p1", "title": "Ваджра", "url": "https://example.com/p1"},),
+    )
+
+    restored = DialogueState.from_dict(state.to_dict())
+
+    assert restored.active_collection_topic == "product"
+    assert restored.active_collection_items == (
+        {"id": "p1", "title": "Ваджра", "url": "https://example.com/p1"},
+    )
