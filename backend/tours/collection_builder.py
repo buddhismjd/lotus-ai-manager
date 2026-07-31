@@ -9,6 +9,7 @@ from backend.structured_catalog.models import StructuredTour
 from backend.structured_catalog.repositories import StructuredTourRepository
 from backend.tours.intelligence import COUNTRY_PATTERNS, normalize
 from backend.tours.planned import PLANNED_TOURS
+from backend.sales_assistant.tour_discovery import filter_tours_for_query, understand_tour_query
 
 
 _NAVIGATION_LINES = {
@@ -131,20 +132,29 @@ def _published_item(tour: StructuredTour) -> CollectionItem:
 
 
 def build_tour_collection(query: str) -> list[CollectionItem]:
-    """Build the complete country collection without first-match truncation."""
+    """Build a complete structured tour collection for a direction or place.
+
+    Country searches retain their planned-tour fallback. Destination and aspect
+    searches use the same structured discovery vocabulary and never fall
+    through to the product catalogue merely because a page router was unsure.
+    """
     country = detect_country(query)
+    all_tours = StructuredTourRepository().list_all()
+    if country:
+        published = [
+            tour for tour in all_tours if country in infer_tour_countries(tour)
+        ]
+    else:
+        discovery = understand_tour_query(query)
+        if not discovery.constrained:
+            return []
+        published = filter_tours_for_query(all_tours, query)
+
+    if published:
+        return rank_collection(query, [_published_item(tour) for tour in published])
+
     if not country:
         return []
-
-    published = [
-        tour
-        for tour in StructuredTourRepository().list_all()
-        if country in infer_tour_countries(tour)
-    ]
-    if published:
-        # rank_collection only orders the complete set; it never filters or
-        # limits it.  A country request must expose every matching programme.
-        return rank_collection(query, [_published_item(tour) for tour in published])
 
     return rank_collection(query, [
         CollectionItem(

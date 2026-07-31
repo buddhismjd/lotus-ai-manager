@@ -21,6 +21,7 @@ from backend.sales_assistant.formatter import format_sales_response, format_tour
 from backend.sales_assistant.leads import LeadRepository
 from backend.sales_assistant.handoff import HandoffPriority, HandoffReason
 from backend.sales_assistant.handoff_engine import HandoffEngine
+from backend.sales_assistant.intent_router import classify_commercial_intent
 from backend.sales_assistant.lead_summary import LeadSummaryBuilder, LeadSummaryContext
 from backend.sales_assistant.lead_validator import LeadValidator
 from backend.sales_assistant.selection_page import build_selection_url
@@ -251,9 +252,12 @@ class SalesAssistant:
                 state.active_url = None
             return self._product_selection_reply(selection_result)
 
+        intent_decision = classify_commercial_intent(query)
         route = route_query(query)
         topic = self._topic(route.intent)
-        if topic == "unknown" and self._is_follow_up(query):
+        if intent_decision.primary != "unknown":
+            topic = intent_decision.primary
+        elif topic == "unknown" and self._is_follow_up(query):
             topic = self._state_topic(state)
 
         decision = choose_strategy(query, topic)
@@ -299,44 +303,19 @@ class SalesAssistant:
             return self._tour_selection_reply(state)
 
         country = detect_country(query)
-        normalised_query = self._normalise(query)
-        standalone_country = bool(
-            country and normalised_query == self._normalise(country)
-        )
-        # detect_country already handles grammatical forms such as "Индии".
-        # Comparing the canonical label ("Индия") with the raw query loses
-        # those requests and lets stale dialogue context win.
-        explicit_country = country is not None
-        country_collection_request = explicit_country and (
-            standalone_country or any(
-            marker in normalised_query
-            for marker in (
-                "возите",
-                "есть поезд",
-                "есть тур",
-                "туры в",
-                "поездки в",
-                "путешествия в",
-                "что есть",
-                "что по",
-                "расскажи про",
-                "расскажите про",
-                "покажите",
-                "покажи",
-            )
-        )
-        )
-        if (
-            country_collection_request
-            and decision.month is None
+        tour_collection_request = (
+            topic == "tour"
+            and intent_decision.is_catalog_query
             and decision.strategy not in {"tour_price", "tour_date"}
-        ):
-            # An explicitly named direction starts a new search and must never
-            # inherit a previously active tour (e.g. Nepal -> India).
+        )
+        if tour_collection_request:
+            # An explicitly named direction or destination starts a new search
+            # and must never inherit a stale active tour from the dialogue.
             state.clear_tour_context()
             tour_items = build_tour_collection(query)
             state.last_query = query
             state.topic = "tour"
+            collection_label = country or intent_decision.label or "запросу"
             if tour_items:
                 planned_only = all(item.status == "planned" for item in tour_items)
                 published_tours = [
@@ -345,9 +324,9 @@ class SalesAssistant:
                     if tour.id in {item.id for item in tour_items}
                 ]
                 if published_tours:
-                    state.remember_tour_list(published_tours, month=None)
+                    state.remember_tour_list(published_tours, month=decision.month)
                 answer = (
-                    f"По направлению «{country}» опубликованных программ пока нет, "
+                    f"По направлению «{collection_label}» опубликованных программ пока нет, "
                     "но готовится следующее путешествие:"
                     if planned_only
                     else (
@@ -359,7 +338,7 @@ class SalesAssistant:
                             if 2 <= len(tour_items) <= 4
                             else "путешествий"
                         )
-                        + f" по направлению «{country}». Все варианты представлены ниже."
+                        + f" по запросу «{collection_label}». Все варианты представлены ниже."
                     )
                 )
                 return self._with_dialogue(
@@ -376,7 +355,7 @@ class SalesAssistant:
                 SalesReply(
                     answer=(
                         "Сейчас я не нашла опубликованных или планируемых "
-                        f"путешествий по направлению «{country}»."
+                        f"путешествий по запросу «{collection_label}»."
                     ),
                     kind="tour_collection",
                     topic="tour",
