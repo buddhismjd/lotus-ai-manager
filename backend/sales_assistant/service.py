@@ -304,9 +304,11 @@ class SalesAssistant:
 
         country = detect_country(query)
         tour_collection_request = (
-            topic == "tour"
-            and intent_decision.is_catalog_query
-            and decision.strategy not in {"tour_price", "tour_date"}
+            decision.strategy not in {"tour_price", "tour_date"}
+            and (
+                country is not None
+                or (topic == "tour" and intent_decision.is_catalog_query)
+            )
         )
         if tour_collection_request:
             # An explicitly named direction or destination starts a new search

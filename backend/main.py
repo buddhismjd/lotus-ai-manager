@@ -150,16 +150,13 @@ async def api_bodhi_chat(payload: dict) -> JSONResponse:
 
     try:
         route = route_query(message)
-        if route.intent == "product":
-            items = [commercial_card(item) for item in build_product_collection(message)]
-            if items:
-                count = len(items)
-                answer = f"Нашла {count} подходящих " + ("товар." if count == 1 else "товара." if count < 5 else "товаров.")
-                kind = "product_collection"
-        elif route.intent == "tour" and detect_country(message):
+        country = detect_country(message)
+        # A named country is an explicit tour collection constraint. Handle it
+        # before the generic router so a weak or ambiguous route can never
+        # fall through to an unfiltered catalogue response.
+        if country:
             items = [commercial_card(item) for item in build_tour_collection(message)]
             if items:
-                country = detect_country(message)
                 planned_only = all(item.get("status") == "planned" for item in items)
                 answer = (
                     f"По направлению «{country}» опубликованных программ пока нет, но готовится следующее путешествие:"
@@ -167,6 +164,12 @@ async def api_bodhi_chat(payload: dict) -> JSONResponse:
                     f"Нашла путешествия по направлению «{country}»:"
                 )
                 kind = "tour_collection"
+        elif route.intent == "product":
+            items = [commercial_card(item) for item in build_product_collection(message)]
+            if items:
+                count = len(items)
+                answer = f"Нашла {count} подходящих " + ("товар." if count == 1 else "товара." if count < 5 else "товаров.")
+                kind = "product_collection"
     except Exception:
         # The established answer remains available while catalog storage is
         # being initialized or during isolated API tests.
